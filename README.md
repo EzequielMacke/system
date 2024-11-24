@@ -8,7 +8,7 @@ Start a new Laravel 8 project with the AdminLTE template installed.
 # Installation
 
 1) Create database.
-2) Clone repository `git clone https://github.com/AlexSandoval99/system.git`
+2) Clone repository `git clone https://github.com/EzequielMacke/system.git`
 3) Copy `.env.example` to `.env`
 3) cp .env.example .env
 4) Set valid database credentials of env variables `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`
