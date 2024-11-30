@@ -34,7 +34,7 @@
 					</li>
 				</ul>
 			</li>
-			<li class="treeview">
+			{{-- <li class="treeview">
 				<a href="#"><i class="fa fa-group"></i><span>Materia Prima</span><span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span></a>
 				<ul class="treeview-menu">
 					<li class="Materia Prima">
@@ -98,8 +98,8 @@
 						</a>
 					</li>
 				</ul>
-			</li>
-            <li class="treeview">
+			</li> --}}
+            {{-- <li class="treeview">
 				<a href="#"><i class="fa fa-group"></i><span>Compras</span><span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span></a>
 				<ul class="treeview-menu">
 					<li class="provider">
@@ -126,7 +126,7 @@
 						</a>
 					</li>
 				</ul>
-			</li>
+			</li> --}}
 			<li class="treeview">
 				<a href="#"><i class="fa fa-group"></i><span>Servicio</span><span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span></a>
 				<ul class="treeview-menu">

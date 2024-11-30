@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\BudgetService;
 use App\Models\BudgetServiceDetail;
 use App\Models\ConstructionSite;
+use App\Models\Input;
 use App\Models\Service;
 use App\Models\WishService;
 use App\Models\WishServiceDetail;
@@ -271,6 +272,7 @@ class BudgetServiceController extends Controller
                     $results['items'][$key]['service_id']       = $site->service_id;
                     $results['items'][$key]['service_name']     = $site->service->description;
                     $results['items'][$key]['quantity']         = $site->quantity;
+                    $results['items'][$key]['level']            = $site->level;
                     $results['items'][$key]['description']      = '';
                 }
             }
@@ -285,12 +287,22 @@ class BudgetServiceController extends Controller
             else if(request()->wish_id)
             {
                 $sites = WishServiceDetail::where('wish_services_id',request()->wish_id)->get();
-                foreach ($sites as $key => $site) {
-                    $results['items'][$key]['id']               = $site->id;
-                    $results['items'][$key]['service_id']       = $site->services_id;
-                    $results['items'][$key]['service_name']     = $site->service->description;
-                    $results['items'][$key]['quantity']         = $site->quantity;
-                    $results['items'][$key]['description']      = '';
+                foreach ($sites as $key0 => $site)
+                {
+                    $services = Input::where('typeofservice',$site->services_id)->get();
+                    foreach ($services as $key => $service)
+                    {
+                        $results['items'][$site->id.' '.$key]['id']               = $site->id;
+                        $results['items'][$site->id.' '.$key]['service_id']       = $site->services_id;
+                        $results['items'][$site->id.' '.$key]['service_name']     = $site->service->description;
+                        $results['items'][$site->id.' '.$key]['quantity']         = $site->quantity;
+                        $results['items'][$site->id.' '.$key]['level']            = $site->level;
+                        $results['items'][$site->id.' '.$key]['input']            = $service->description;
+                        $results['items'][$site->id.' '.$key]['input_id']         = $service->id;
+                        $results['items'][$site->id.' '.$key]['input_price']      = $service->price;
+                        $results['items'][$site->id.' '.$key]['measurement']      = $service->measurement;
+                        $results['items'][$site->id.' '.$key]['description']      = '';
+                    }
                 }
             }
             return response()->json($results);

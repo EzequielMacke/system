@@ -64,9 +64,10 @@ class WishServiceController extends Controller
                 foreach($request->service_id as $key => $value)
                 {
                     $wish_service->wish_service_detail()->create([
-                        'wish_services_id'          => $wish_service->id,
+                        'wish_services_id'         => $wish_service->id,
                         'services_id'              => $value,
-                        'quantity'                 => $request->quantity[$key]
+                        'quantity'                 => $request->quantity[$key],
+                        'level'                    => $request->level[$key]
                     ]);
                 }
             });

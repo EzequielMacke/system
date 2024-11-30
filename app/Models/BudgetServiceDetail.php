@@ -14,7 +14,11 @@ class BudgetServiceDetail extends Model
                             'service_id',
                             'price',
                             'quantity',
-                            'total_price'
+                            'level',
+                            'total_price',
+                            'quantity_per_meter',
+                            'input_id',
+
                         ];
 
     public function service()
@@ -24,5 +28,9 @@ class BudgetServiceDetail extends Model
     public function budget_service()
     {
         return $this->belongsTo('App\Models\BudgetService','budget_service_id');
+    }
+    public function input()
+    {
+        return $this->belongsTo('App\Models\Input');
     }
 }

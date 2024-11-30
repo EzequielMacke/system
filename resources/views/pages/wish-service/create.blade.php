@@ -73,8 +73,12 @@
                     <span class="red" id="text_last_purchases"></span>
                 </div>
                 <div class="form-group col-md-2">
-                    <label>Cantidad</label>
+                    <label>Metros Cuadrados</label>
                     <input class="form-control" type="text" name="quantity" value="{{ old('quantity') }}" placeholder="Cantidad">
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Niveles</label>
+                    <input class="form-control" type="text" name="level" value="{{ old('level') }}" placeholder="Niveles">
                 </div>
                 <div class="form-group col-md-1">
                     <label>Agregar</label>
@@ -90,6 +94,7 @@
                         <th class="text-right">Cód</th>
                         <th>Producto</th>
                         <th class="text-right">Cantidad</th>
+                        <th class="text-right">Niveles</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -204,68 +209,52 @@
             });
         });
 
-        function addProduct()
-        {
-            var service_name              = $("select[name='service_id'] option:selected").text();
-            var service_id                = $("select[name='service_id']").val();
-            var product_description       = '';
-            var quantity          = $("input[name='quantity']").val().replace(/\./g, '');
-            quantity              = (quantity > 0 ? quantity : 1);
+        function addProduct() {
+    var service_name = $("select[name='service_id'] option:selected").text();
+    var service_id = $("select[name='service_id']").val();
+    var product_description = '';
+    var quantity = $("input[name='quantity']").val().replace(/\./g, '');
+    var level = $("input[name='level']").val(); // Obtener el valor del nivel
+    quantity = (quantity > 0 ? quantity : 1);
 
-            if(service_id!='' && quantity!='')
-            {
-                if($.inArray(service_id, invoice_items_array) != '-1')
-                {
-                    if(confirm('Ya existe el producto, desea continuar?'))
-                    {
-                        var description = product_description ? product_description : service_name;
-
-                        addToTable(service_id, description, quantity, product_description);
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    var description = product_description ? product_description : service_name;
-
-                    addToTable(service_id, description, quantity,product_description,service_name);
-                }
-
-                $('#service_id').val(null).trigger('change');
-                $("#products_description").val('');
-                $("input[name='quantity']").val('');
-
-            }
-            else
-            {
-                swal({
-                    title: "SISTEMA",
-                    text: "Hay campos vacíos",
-                    icon: "warning",
-                    button: "OK",
-                });
+    if (service_id != '' && quantity != '' && level != '') { // Verificar que el nivel no esté vacío
+        if ($.inArray(service_id, invoice_items_array) != '-1') {
+            if (confirm('Ya existe el producto, desea continuar?')) {
+                var description = product_description ? product_description : service_name;
+                addToTable(service_id, description, quantity, product_description, level); // Pasar el nivel
+            } else {
                 return false;
             }
+        } else {
+            var description = product_description ? product_description : service_name;
+            addToTable(service_id, description, quantity, product_description, level); // Pasar el nivel
         }
+        $('#service_id').val(null).trigger('change');
+        $("#products_description").val('');
+        $("input[name='quantity']").val('');
+        $("input[name='level']").val(''); // Limpiar el campo de nivel
+    } else {
+        swal({
+            title: "SISTEMA",
+            text: "Hay campos vacíos",
+            icon: "warning",
+            button: "OK",
+        });
+        return false;
+    }
+}
 
-        function addToTable(id, name, quantity, description,service_name)
-        {
-            counter++;
-            invoice_items_array.push(id);
-
-            $('#tbody_detail').append('<tr>' +
-                    '<td>' + counter + '</td>' +
-                    '<td class="text-right">' + id +' <input type="hidden" name="service_id[]" value="' + id + '"></td>' +
-                    '<td>' + service_name + '<input type="hidden" name="service_name[]" value="' + service_name + '"></td>' +
-                    '<td class="text-right"><input type="text" class="form-control" name="quantity[]" value="' + quantity + '"></td>' +
-                    '<input type="hidden" class="form-control" name="detail_product_description[]" value="' + description + '">'+
-                    '<td class="text-right"><a href="javascript:;" onClick="removeRow(this, '+ id +');"><i style="font-size:17px;" class="fa fa-times"></i></a></td>' +
-                '</tr>');
-
-        }
+function addToTable(service_id, description, quantity, product_description, level) {
+    // Aquí puedes agregar la lógica para agregar la fila a la tabla
+    $('#tbody_detail').append('<tr>' +
+        '<td>' + counter + '</td>' +
+        '<td class="text-right">' + service_id + ' <input type="hidden" name="service_id[]" value="' + service_id + '"></td>' +
+        '<td>' + description + '<input type="hidden" name="service_name[]" value="' + description + '"></td>' +
+        '<td class="text-right"><input type="text" class="form-control" name="quantity[]" value="' + quantity + '"></td>' +
+        '<td class="text-right">' + level + '<input type="hidden" name="level[]" value="' + level + '"></td>' + // Nueva columna para nivel
+        '<td class="text-right"><a href="javascript:;" onClick="removeRow(this, ' + service_id + ');"><i style="font-size:17px;" class="fa fa-times"></i></a></td>' +
+    '</tr>');
+}
 
         function removeRow(t, service_id)
         {
