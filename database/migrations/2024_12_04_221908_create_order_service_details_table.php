@@ -15,9 +15,13 @@ class CreateOrderServiceDetailsTable extends Migration
     {
         Schema::create('order_service_details', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('service_id');
-            $table->integer('order_service_id');
-            $table->integer('quantity');
+            $table->unsignedInteger('order_id');
+            $table->foreign('order_id')->references('id')->on('order_services');
+            $table->unsignedInteger('service_id');
+            $table->foreign('service_id')->references('id')->on('services');
+            $table->unsignedInteger('input_id');
+            $table->foreign('input_id')->references('id')->on('inputs');
+            $table->integer('input_quantity');
             $table->timestamps();
         });
     }

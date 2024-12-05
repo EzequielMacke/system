@@ -15,19 +15,20 @@ class CreateOrderServicesTable extends Migration
     {
         Schema::create('order_services', function (Blueprint $table) {
             $table->increments('id');
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
-            $table->unsignedInteger('construction_site_id');
-            $table->foreign('construction_site_id')->references('id')->on('construction_site');
-            $table->unsignedInteger('budget_id');
-            $table->foreign('budget_id')->references('id')->on('budgets_service');
-            $table->unsignedInteger('client_id');
-            $table->foreign('client_id')->references('id')->on('clients');
+            $table->date('date_created');
+            $table->date('date_ending');
             $table->unsignedInteger('branch_id');
             $table->foreign('branch_id')->references('id')->on('branches');
-            $table->date('date');
-            $table->string('observation');
+            $table->unsignedInteger('contract_id');
+            $table->foreign('contract_id')->references('id')->on('contracts');
+            $table->unsignedInteger('client_id');
+            $table->foreign('client_id')->references('id')->on('clients');
+            $table->unsignedInteger('constructionsite_id');
+            $table->foreign('constructionsite_id')->references('id')->on('construction_site');
+            $table->unsignedInteger('budget_id');
+            $table->foreign('budget_id')->references('id')->on('budgets_service');
             $table->integer('status');
+            $table->string('observation');
             $table->timestamps();
         });
     }

@@ -7,6 +7,9 @@ use App\Http\Requests\CreateOrderServiceRequest;
 use App\Models\Branch;
 use App\Models\BudgetService;
 use App\Models\ConstructionSite;
+use App\Models\Contracts;
+use App\Models\Oficial;
+use App\Models\Oflicial;
 use App\Models\OrderService;
 use App\Models\Service;
 use App\Models\WishService;
@@ -16,6 +19,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
+use League\CommonMark\Node\Block\Document;
 
 class OrderServiceController extends Controller
 {
@@ -37,10 +41,15 @@ class OrderServiceController extends Controller
 
     public function create()
     {
+        $lastOrder = OrderService::orderBy('id', 'desc')->first();
+        $newOrderNumber = $lastOrder ? $lastOrder->id + 1 : 1;
         $construction_sites      = ConstructionSite::pluck('description', 'id');
         $branches               = Branch::where('status', true)->pluck('name', 'id');
         $services               = Service::pluck('description', 'id');
-        return view('pages.order-service.create', compact('construction_sites' , 'branches', 'services'));
+        $oficial                = Oficial::all();
+        $const = array(config('constants'));
+        $posts = $const[0]['posts'];
+        return view('pages.order-service.create', compact('construction_sites' , 'branches', 'services','newOrderNumber','oficial','posts'));
     }
 
     public function store(CreateOrderServiceRequest $request)
@@ -244,34 +253,37 @@ class OrderServiceController extends Controller
         return str_replace(',', '.',str_replace('.', '', $value));
     }
 
-    public function ajax_wish()
+    public function ajax_order()
     {
-        if(request()->ajax())
+    if(request()->ajax())
+    {
+        $results = [];
+        if(request()->client_id && request()->site_id)
         {
-            $results   = [];
+            $contracts = Contracts::where('client_id', request()->client_id)
+                                  ->where('constructionsite_id', request()->site_id)
+                                  ->where('status', 1)
+                                  ->get();
 
-            if(request()->client_id && request()->site_id)
-            {
-                $sites = WishService::where('client_id',request()->client_id)->where('construction_site_id',request()->site_id)->where('status',1)->get();
-                foreach ($sites as $key => $site) {
-                    $results['items'][$key]['id']               = $site->id;
-                    $results['items'][$key]['date_budget']      = $site->id.' - '.Carbon::createFromFormat('Y-m-d',$site->date_wish)->format('d/m/Y');
-                }
+            foreach ($contracts as $key => $contract) {
+                $results['items'][$key]['id'] = $contract->id;
+                $results['items'][$key]['term'] = $contract->term;
+                $results['items'][$key]['budget_service_id'] = $contract->budget_service_id;
             }
-            else if(request()->wish_id)
-            {
-                $sites = WishServiceDetail::where('wish_services_id',request()->wish_id)->get();
-                foreach ($sites as $key => $site) {
-                    $results['items'][$key]['id']               = $site->id;
-                    $results['items'][$key]['service_id']       = $site->services_id;
-                    $results['items'][$key]['service_name']     = $site->service->description;
-                    $results['items'][$key]['quantity']         = $site->quantity;
-                    $results['items'][$key]['description']      = '';
-                }
-            }
-            return response()->json($results);
         }
-        abort(404);
+        else if(request()->contract_id)
+        {
+            $contracts = Contracts::where('status', 1)->where('id', request()->contract_id)
+                                  ->first();
+
+                $results['id'] = $contracts->id;
+                $results['term'] = $contracts->term;
+                $results['budget_service_id'] = $contracts->budget_service_id;
+        }
+
+        return response()->json($results);
+    }
+    abort(404);
     }
 
 }

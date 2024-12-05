@@ -102,5 +102,30 @@ return [
         2=> 'Usd',
         3=> 'Real'
     ],
+    'contract_status'=>[
+        1=> 'Pendiente',
+        2=> 'En curso',
+        3=> 'Culminado'
+    ],
+    'contract_status_label'=>[
+        1=> 'danger',
+        2=> 'warning',
+        3=> 'success'
+    ],
+    'oficial_status'=>[
+        1=> 'Activo',
+        2=> 'Inactivo'
+    ],
+    'contract_status_label'=>[
+        1=> 'success',
+        2=> 'warning'
+    ],
+    'posts'=>[
+        1=> 'Tecnico',
+        2=> 'Ingeniero',
+        3=> 'Ayudante',
+        4=> 'Programador Junior',
+        5=> 'Chofer'
+    ],
 ]
 ?>

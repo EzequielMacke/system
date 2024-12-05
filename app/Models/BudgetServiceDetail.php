@@ -12,8 +12,8 @@ class BudgetServiceDetail extends Model
     protected $fillable = [
                             'budget_service_id',
                             'service_id',
-                            'price',
                             'quantity',
+                            'price',
                             'level',
                             'total_price',
                             'quantity_per_meter',
@@ -31,6 +31,6 @@ class BudgetServiceDetail extends Model
     }
     public function input()
     {
-        return $this->belongsTo('App\Models\Input');
+        return $this->belongsTo('App\Models\Input','input_id');
     }
 }

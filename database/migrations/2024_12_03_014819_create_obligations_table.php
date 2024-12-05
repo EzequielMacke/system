@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddFieldStartDateInOrderServicesTable extends Migration
+class CreateObligationsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,11 @@ class AddFieldStartDateInOrderServicesTable extends Migration
      */
     public function up()
     {
-        Schema::table('order_services', function (Blueprint $table) {
-            $table->date('start_date')->after('observation');
+        Schema::create('obligations', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('name');
+            $table->integer('status');
+            $table->timestamps();
         });
     }
 
@@ -25,8 +28,6 @@ class AddFieldStartDateInOrderServicesTable extends Migration
      */
     public function down()
     {
-        Schema::table('order_services', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('obligations');
     }
 }

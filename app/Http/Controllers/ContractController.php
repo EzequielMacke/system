@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\CreateBudgetsServiceRequest;
-use App\Http\Requests\CreateWishServiceRequest;
+use App\Http\Requests\CreateContractsRequest;
 use App\Models\Branch;
 use App\Models\BudgetService;
 use App\Models\BudgetServiceDetail;
+use App\Models\Clauses;
 use App\Models\ConstructionSite;
+use App\Models\ContractDetails;
+use App\Models\Contracts;
 use App\Models\Input;
+use App\Models\Obligations;
 use App\Models\Service;
 use App\Models\WishService;
 use App\Models\WishServiceDetail;
@@ -19,22 +22,22 @@ use Illuminate\Support\Facades\DB;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
 
-class BudgetServiceController extends Controller
+class ContractController extends Controller
 {
     public function index()
     {
-        $budgetservices = BudgetService::with('client','construction_site')->orderBy('id');
+        $contracts = Contracts::with('client','construction_site')->orderBy('id');
         if(request()->s)
         {
-            $budgetservices = $budgetservices->whereHas('construction_site', function($query){
+            $contracts = $contracts->whereHas('construction_site', function($query){
                 $query->where('description','LIKE', '%'. request()->s . '%');
             })->OrwhereHas('client', function($query2){
                 $query2->where('razon_social','LIKE', '%'. request()->s . '%');
             });
         }
 
-        $budgetservices = $budgetservices->paginate(20);
-        return view('pages.budget-service.index', compact('budgetservices'));
+        $contracts = $contracts->paginate(20);
+        return view('pages.contract.index', compact('contracts'));
     }
 
     public function create()
@@ -42,40 +45,74 @@ class BudgetServiceController extends Controller
         $construction_sites      = ConstructionSite::pluck('description', 'id');
         $branches               = Branch::where('status', true)->pluck('name', 'id');
         $services               = Service::pluck('description', 'id');
-        return view('pages.budget-service.create', compact('construction_sites' , 'branches', 'services'));
+        return view('pages.contract.create', compact('construction_sites' , 'branches', 'services'));
     }
 
-    public function store(CreateBudgetsServiceRequest $request)
+    public function store(CreateContractsRequest $request)
     {
         if(request()->ajax())
         {
             DB::transaction(function() use ($request)
             {
 
-                $budget = BudgetService::create([
+                $contract = Contracts::create([
                         'description'           => request()->observation,
-                        'user_id'               => auth()->user()->id,
-                        'client_id'             => request()->client_id,
-                        'wish_service_id'       => request()->wish_id,
+                        'date_created'          => Carbon::now(),
+                        'date_signed'           =>null,
                         'constructionsite_id'   => request()->site_id,
-                        'date_budgets'          => Carbon::createFromFormat('d/m/Y', request()->date)->format('Y-m-d'),
-                        'tax'                   => request()->tax,
-                        'currency'              => request()->currency,
-                        'branch_id'             => request()->branch_id,
+                        'term'                  => request()->term,
+                        'budget_service_id'     => request()->budget_id,
+                        'client_id'             => request()->client_id,
+                        'user_id'               => auth()->user()->id,
+                        'placement'             => request()->placement,
+                        'issue'                => request()->issue,
                         'status'                => 1
                 ]);
-                foreach ($request->input_id as $key => $value) {
-                    $input_value = explode("-",$value);
-                    $precio = str_replace([',', '.'], '', $request->price[$key]);
-                    $budget->budget_service_detail()->create([
-                        'budget_service_id' => $budget->id, // ID del presupuesto
-                        'service_id' => $input_value[0], // ID del servicio
-                        'quantity' => $request->new_metro[$key], // Cantidad del servicio
-                        'price' => intval($precio), // Precio del servicio
-                        'level' => $request->new_level[$key], // Nivel
-                        'total_price' => ($request->new_metro[$key] * intval($precio)) * $request->new_level[$key], // Precio total
-                        'quantity_per_meter' => $request->quantity_per_meter[$key] ?? 0, // Cantidad por metro
-                        'input_id' => $input_value[1] // ID de entrada convertido a entero
+                $contracte = request()->all();
+                $detailsoblis = [];
+                foreach ($contracte['service_id-obli'] as $key => $service_id) {
+                    $obligation_id = $contracte['id-obli'][$key] ?? null;
+
+                    // Si ambos son nulos, termina el array
+                    if (is_null($obligation_id)) {
+                        break;
+                    }
+
+                    $detailsoblis[] = [
+                        'service_id' => intval($service_id),
+                        'obligation_id' => intval($obligation_id),
+                    ];
+                }
+
+                // Iterar sobre el array y crear los detalles del contrato
+                foreach ($detailsoblis as $detailsobli) {
+                    ContractDetails::create([
+                        'contract_id'   => $contract->id,
+                        'service_id'    => $detailsobli['service_id'],
+                        'obligation_id' => $detailsobli['obligation_id'],
+                    ]);
+                }
+                $detailsclaus = [];
+                foreach ($contracte['service_id-clau'] as $key => $service_id) {
+                    $clause_id = $contracte['id-clau'][$key] ?? null;
+
+                    // Si ambos son nulos, termina el array
+                    if (is_null($clause_id)) {
+                        break;
+                    }
+
+                    $detailsclaus[] = [
+                        'service_id' => intval($service_id),
+                        'clause_id' => intval($clause_id),
+                    ];
+                }
+
+                // Iterar sobre el array y crear los detalles del contrato
+                foreach ($detailsclaus as $detailsclau) {
+                    ContractDetails::create([
+                        'contract_id'   => $contract->id,
+                        'service_id'    => $detailsclau['service_id'],
+                        'clause_id'     => $detailsclau['clause_id'],
                     ]);
                 }
             });
@@ -251,32 +288,84 @@ class BudgetServiceController extends Controller
         return str_replace(',', '.',str_replace('.', '', $value));
     }
 
-    public function ajax_wish()
+    public function ajax_contract()
     {
         if(request()->ajax())
         {
             $results   = [];
-            if(request()->client_id && request()->site_id && request()->type == 'presupuesto')
+            if(request()->client_id && request()->site_id )
             {
                 $sites = BudgetService::where('client_id',request()->client_id)->where('constructionsite_id',request()->site_id)->where('status',1)->get();
                 foreach ($sites as $key => $site) {
                     $results['items'][$key]['id']               = $site->id;
                     $results['items'][$key]['date_budget']      = $site->id.' - '.Carbon::createFromFormat('Y-m-d',$site->date_budgets)->format('d/m/Y');
+                    $results['items'][$key]['description']      = $site->description;
+
                 }
             }
-            else if(request()->budget_id)
-            {
-                $sites = BudgetServiceDetail::where('budget_service_id',request()->budget_id)->get();
+            else if (request()->budget_id) {
+                $sites = BudgetServiceDetail::where('budget_service_id', request()->budget_id)->get();
                 foreach ($sites as $key => $site) {
-                    $results['items'][$key]['id']               = $site->id;
-                    $results['items'][$key]['service_id']       = $site->service_id;
-                    $results['items'][$key]['service_name']     = $site->service->description;
-                    $results['items'][$key]['quantity']         = $site->quantity;
-                    $results['items'][$key]['level']            = $site->level;
-                    $results['items'][$key]['description']      = '';
+                    $results['items'][$key]['id'] = $site->id;
+                    $results['items'][$key]['service_id'] = $site->service_id;
+                    $results['items'][$key]['service_name'] = $site->service->description;
+                    $results['items'][$key]['quantity'] = $site->quantity;
+                    $results['items'][$key]['level'] = $site->level;
+                    $results['items'][$key]['description'] = '';
+
+                    // Recuperar cláusulas y obligaciones
+                    $clauses = Clauses::where('type_id', $site->service_id)->get();
+                    $obligations = Obligations::where('type_id', $site->service_id)->get();
+
+                    // Agregar cláusulas al resultado
+                    foreach ($clauses as $clauseKey => $clause) {
+                        $results['items'][$key]['clauses'][$clauseKey]['id'] = $clause->id;
+                        $results['items'][$key]['clauses'][$clauseKey]['description'] = $clause->description;
+                        $results['items'][$key]['clauses'][$clauseKey]['service_id'] = $site->service_id;
+                    }
+
+                    // Agregar obligaciones al resultado
+                    foreach ($obligations as $obligationKey => $obligation) {
+                        $results['items'][$key]['obligations'][$obligationKey]['id'] = $obligation->id;
+                        $results['items'][$key]['obligations'][$obligationKey]['name'] = $obligation->name;
+                        $results['items'][$key]['obligations'][$obligationKey]['service_id'] = $site->service_id;
+                    }
                 }
+
+                // Extraer cláusulas y obligaciones únicas
+                $clauses = [];
+                $obligations = [];
+                foreach ($results['items'] as $item) {
+                    if (isset($item['clauses'])) {
+                        foreach ($item['clauses'] as $clause) {
+                            $clauses[] = $clause;
+                        }
+                    }
+                    if (isset($item['obligations'])) {
+                        foreach ($item['obligations'] as $obligation) {
+                            $obligations[] = $obligation;
+                        }
+                    }
+                }
+
+                $clauniqueArray = [];
+                foreach ($clauses as $item) {
+                    $clauniqueArray[$item['id']] = $item;
+                }
+                $clauniqueArray = array_values($clauniqueArray);
+
+                $obliuniqueArray = [];
+                foreach ($obligations as $item) {
+                    $obliuniqueArray[$item['id']] = $item;
+                }
+                $obliuniqueArray = array_values($obliuniqueArray);
+
+                // Agregar los arrays únicos a la respuesta
+                $results['clauniqueArray'] = $clauniqueArray;
+                $results['obliuniqueArray'] = $obliuniqueArray;
+                return response()->json($results);
             }
-            else if(request()->client_id && request()->site_id)
+            else if(request()->client_id && request()->site_id && request()->type == 'presupuesto' )
             {
                 $sites = WishService::where('client_id',request()->client_id)->where('construction_site_id',request()->site_id)->where('status',1)->get();
                 foreach ($sites as $key => $site) {
@@ -306,7 +395,9 @@ class BudgetServiceController extends Controller
                 }
             }
             return response()->json($results);
+
         }
+
         abort(404);
     }
 

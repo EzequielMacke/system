@@ -14,6 +14,7 @@ class AddFieldInputIdInBudgetsServiceDetailsTable extends Migration
     public function up()
     {
         Schema::table('budgets_service_details', function (Blueprint $table) {
+            $table->integer('level')->after('price');
             $table->unsignedInteger('input_id')->after('total_price');
             $table->foreign('input_id')->references('id')->on('inputs');
             $table->integer('quantity_per_meter')->after('total_price');

@@ -6,7 +6,7 @@
         <div class="col-lg-12">
             <div class="ibox float-e-margins">
                 <div class="ibox-title">
-                    <h5>Agregar Presupuesto</h5>
+                    <h5>Agregar Orden</h5>
                 </div>
                 <div class="ibox-content pb-0">
                     <div class="row">
@@ -19,18 +19,26 @@
                             <label>Sucursal</label>
                             {{ Form::select('branch_id', $branches, old('branch_id'), ['class' => 'form-control', 'select2', 'id' => 'branch_id']) }}
                         </div>
+
                         <div class="form-group col-md-2">
                             <label>Fecha</label>
                             <input class="form-control" type="text" name="date" value="{{ old('date', date('d/m/Y')) }}" readonly>
                         </div>
-                        <div class="form-group col-md-2">
-                            <label>Fecha de Inicio</label>
-                            <input class="form-control" type="date" name="start_date" id="start_date">
-                        </div>
-                        {{-- <div class="form-group col-md-2">
-                            <label>Impuesto</label>
-                            {{ Form::select('tax', config('constants.tax'), old('tax'), ['class' => 'form-control', 'select2', 'id' => 'tax']) }}
-                        </div> --}}
+
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <label>Número de Orden de Servicio</label>
+                        <input class="form-control" type="text" name="address" value="{{ $newOrderNumber }}" readonly>
+                    </div>
+                    <div class="col-md-2">
+                        <label>Plazo de finalización</label>
+                        <input class="form-control" type="text" name="term" id="term" oninput="actualizarFechaEstimacion()" readonly>
+                    </div>
+                    <div class="col-md-2">
+                        <label>Fecha de finalización</label>
+                        <input class="form-control" type="Date" name="date_ending" id="date_ending" readonly>
                     </div>
                 </div>
                 <div class="row">
@@ -68,14 +76,29 @@
                     <div class="col-md-2">
                         <div class="ibox float-e-margins">
                             <div class="ibox-title">
+                                <h5>Datos de Contrato</h5>
+                            </div>
+                            <div class="ibox-content pb-0">
+                                <div class="row">
+                                    <div class="form-group col-md-12">
+                                        <label>Nroº Contrato</label>
+                                            <select class="form-control" name="contract_id" id="contract_id"></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+
+                        <div class="ibox float-e-margins">
+                            <div class="ibox-title">
                                 <h5>Datos de Presupuesto</h5>
                             </div>
                             <div class="ibox-content pb-0">
                                 <div class="row">
                                     <div class="form-group col-md-12">
                                         <label>Nroº Presupuesto</label>
-                                            <select class="form-control" name="budget_id" id="budget_id"></select>
-                                            {{-- {{ Form::select('site_id', $construction_sites, old('site_id'), ['class' => 'form-control', 'select2', 'id' => 'site_id']) }} --}}
+                                        <input class="form-control" type="text" name="budget_service_id" id="budget_service_id" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -87,20 +110,46 @@
     </div>
     <div class="ibox float-e-margins">
         <div class="ibox-title">
-            <h3>Items</h3>
+            <h3>Seleccionar funcionarios</h3>
         </div>
-        <div class="ibox-content table-responsive no-padding" id="detail_product">
-            <table class="table table-hover table-striped mb-0">
+        <div class="ibox-content pb-0">
+            <div class="row">
+                <div class="form-group col-md-2">
+                    <label>Funcionario</label>
+                    <select class="form-control" name="funcionario_id" id="funcionario_id">
+                        <option value="">Seleccione un funcionario</option>
+                        @foreach($oficial as $of)
+                            <option value="{{ $of->id }}" data-role="{{ config('constants.posts.' . $of->post) }}" data-document="{{ $of->document_nr }}">{{ $of->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Rol</label>
+                    <input class="form-control" type="text" name="funcionario_role" id="funcionario_role" readonly>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Documento</label>
+                    <input class="form-control" type="text" name="funcionario_document" id="funcionario_document" readonly>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Agregar funcionario</label><br>
+                    <button type="button" class="btn btn-primary" onclick="addFuncionario()">Agregar</button>
+                </div>
+            </div>
+        </div>
+        <div class="ibox-content table-responsive no-padding">
+            <table class="table table-hover table-striped mb-0" id="funcionarios_table">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th class="text-right">Cód</th>
-                        <th>Producto</th>
-                        <th class="text-right">Cantidad</th>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Rol</th>
+                        <th>Nro de Documento</th>
+                        <th>Acciones</th>
                         <th></th>
                     </tr>
                 </thead>
-                <tbody id="tbody_detail"></tbody>
+                <tbody id="tbody_funcionarios"></tbody>
             </table>
         </div>
     </div>
@@ -123,9 +172,18 @@
     <script>
         var counter = 0;
         var invoice_items_array = [];
+        var addedFuncionarios = [];
 
         $(document).ready(function ()
         {
+            $('#funcionario_id').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                var role = selectedOption.data('role');
+                var document = selectedOption.data('document');
+
+                $('#funcionario_role').val(role);
+                $('#funcionario_document').val(document);
+            });
             var today = new Date();
             var day = String(today.getDate()).padStart(2, '0');
             var month = String(today.getMonth() + 1).padStart(2, '0');
@@ -217,22 +275,21 @@
                 });
             });
 
-            $('#site_id').change(function()
-            {
+            $('#site_id').change(function() {
                 var client_id = $("select[name='client_id']").val();
                 var site_id = $("select[name='site_id']").val();
-                // Realizar una solicitud al servidor para obtener el precio del artículo
+                // Realizar una solicitud al servidor para obtener los contratos
                 $.ajax({
-                    url: '{{ url('ajax/wish') }}',
+                    url: '{{ url('ajax/order') }}',
                     method: 'GET',
-                    data: { client_id: client_id, site_id: site_id,type:'presupuesto' },
+                    data: { client_id: client_id, site_id: site_id },
                     success: function(response) {
-                        var wishSelect = $('#budget_id');
-                        wishSelect.empty();
-                        wishSelect.append('<option value="">Seleccione un presupuesto</option>');
-                        $.each(response.items, function(index,value){
-                            wishSelect.append('<option value="' + value.id + '">' + value.date_budget + '</option>');
-                        })
+                        var contractSelect = $('#contract_id');
+                        contractSelect.empty();
+                        contractSelect.append('<option value="">Seleccione un contrato</option>');
+                        $.each(response.items, function(index, value) {
+                            contractSelect.append('<option value="' + value.id + '">' + value.id + '</option>');
+                        });
                     },
                     error: function(xhr, status, error) {
                         console.error(error);
@@ -241,66 +298,53 @@
                 });
             });
 
-            $('#budget_id').change(function()
-            {
-                var budget_id = $("select[name='budget_id']").val();
-                // Realizar una solicitud al servidor para obtener el precio del artículo
+            $('#contract_id').change(function() {
+                var contract_id = $("select[name='contract_id']").val();
                 $.ajax({
-                    url: '{{ url('ajax/wish') }}',
+                    url: '{{ url('ajax/order') }}',
                     method: 'GET',
-                    data: { budget_id: budget_id },
+                    data: { contract_id: contract_id },
                     success: function(response) {
                         $('#tbody_detail').empty();
 
-                        $.each(response.items, function(index,value){
-                            addToTable(value.service_id, value.description, value.quantity, value.description,value.service_name);
-                        })
+                        $('#budget_service_id').val(response.budget_service_id);
+                        $('#term').val(response.term);
+                        $('#term').trigger('input');
+
+
+                        $.each(response.items, function(index, value) {
+                            addToTable(value.service_id, value.description, value.quantity, value.description, value.service_name);
+                        });
                     },
                     error: function(xhr, status, error) {
                         console.error(error);
-                        // Manejar el error si es necesario
                     }
                 });
             });
         });
+        function addFuncionario() {
+            var funcionario_name = $("select[name='funcionario_id'] option:selected").text();
+            var funcionario_id = $("select[name='funcionario_id']").val();
+            var funcionario_role = $("input[name='funcionario_role']").val();
+            var funcionario_document = $("input[name='funcionario_document']").val();
 
-        function addProduct()
-        {
-            var service_name              = $("select[name='service_id'] option:selected").text();
-            var service_id                = $("select[name='service_id']").val();
-            var product_description       = '';
-            var quantity          = $("input[name='quantity']").val().replace(/\./g, '');
-            quantity              = (quantity > 0 ? quantity : 1);
-
-            if(service_id!='' && quantity!='')
-            {
-                if($.inArray(service_id, invoice_items_array) != '-1')
-                {
-                    if(confirm('Ya existe el producto, desea continuar?'))
-                    {
-                        var description = product_description ? product_description : service_name;
-
-                        addToTable(service_id, description, quantity, product_description);
-                    }
-                    else
-                    {
-                        return false;
-                    }
+            if (funcionario_id != '' && funcionario_role != '' && funcionario_document != '') {
+                if (addedFuncionarios.includes(funcionario_id)) {
+                    swal({
+                        title: "SISTEMA",
+                        text: "El funcionario ya ha sido agregado.",
+                        icon: "warning",
+                        button: "OK",
+                    });
+                    return false;
+                } else {
+                    addToTable(funcionario_id, funcionario_name, funcionario_role, funcionario_document);
+                    addedFuncionarios.push(funcionario_id);
                 }
-                else
-                {
-                    var description = product_description ? product_description : service_name;
-
-                    addToTable(service_id, description, quantity,product_description,service_name);
-                }
-
-                $('#service_id').val(null).trigger('change');
-                $("#products_description").val('');
-                $("input[name='quantity']").val('');
-
-            }
-            else
-            {
+                $('#funcionario_id').val(null).trigger('change');
+                $("input[name='funcionario_role']").val('');
+                $("input[name='funcionario_document']").val('');
+            } else {
                 swal({
                     title: "SISTEMA",
                     text: "Hay campos vacíos",
@@ -311,20 +355,24 @@
             }
         }
 
-        function addToTable(id, name, quantity, description,service_name)
-        {
-            counter++;
-            invoice_items_array.push(id);
+        function addToTable(id, name, role, document) {
+            var table = $('#funcionarios_table tbody');
+            var row = '<tr>' +
+                '<td>' + id + '</td>' +
+                '<td>' + name + '</td>' +
+                '<td>' + role + '</td>' +
+                '<td>' + document + '</td>' +
+                '<td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this, ' + id + ')">Eliminar</button></td>' +
+                '</tr>';
+            table.append(row);
+        }
 
-            $('#tbody_detail').append('<tr>' +
-                    '<td>' + counter + '</td>' +
-                    '<td class="text-right">' + id +' <input type="hidden" name="service_id[]" value="' + id + '"></td>' +
-                    '<td>' + service_name + '<input type="hidden" name="service_name[]" value="' + service_name + '"></td>' +
-                    '<td style="width:3%;" class="text-right">' + quantity + '<input type="hidden" name="quantity[]" value="' + quantity + '"></td>' +
-                    '<input type="hidden" class="form-control" name="detail_product_description[]" value="' + description + '">'+
-                    '<td class="text-right"><a href="javascript:;" onClick="removeRow(this, '+ id +');"><i style="font-size:17px;" class="fa fa-times"></i></a></td>' +
-                '</tr>');
-
+        function removeRow(button, id) {
+            $(button).closest('tr').remove();
+            var index = addedFuncionarios.indexOf(id);
+            if (index > -1) {
+                addedFuncionarios.splice(index, 1);
+            }
         }
 
         function formatPrice(input)
@@ -334,6 +382,30 @@
             parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             input.value = parts.join('.');
         }
+
+        function actualizarFechaEstimacion() {
+            const termInput = document.querySelector('input[name="term"]');
+            const dateEstimatedInput = document.querySelector('input[name="date_ending"]');
+            const term = parseInt(termInput.value, 10);
+            if (!isNaN(term)) {
+                const currentDate = new Date();
+                currentDate.setDate(currentDate.getDate() + term);
+
+                const day = String(currentDate.getDate()).padStart(2, '0');
+                const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+                const year = currentDate.getFullYear();
+
+                // Formato: día/mes/año
+                dateEstimatedInput.value = `${year}-${month}-${day}`;
+            } else {
+                dateEstimatedInput.value = '';
+            }
+        }
+
+        // Inicializar la fecha estimada al cargar la página
+        // document.addEventListener('DOMContentLoaded', function() {
+        //     actualizarFechaEstimacion();
+        // });
 
         function removeRow(t, service_id)
         {

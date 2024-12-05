@@ -1,12 +1,12 @@
 @extends('layouts.AdminLTE.index')
-@section('title', 'Orden de Servicio')
+@section('title', 'Contrato de Servicio')
 @section('content')
 <div class="row">
     <div class="col-lg-12">
         <div class="ibox float-e-margins">
             <div class="ibox-title">
                 <div class="btn-group pull-right">
-                    <a href="{{ url('order-service/create') }}" class="btn btn-primary btn-xs"><i class="fa fa-plus"></i> Agregar</a>
+                    <a href="{{ url('contract/create') }}" class="btn btn-primary btn-xs"><i class="fa fa-plus"></i> Agregar</a>
                 </div>
             </div>
             <div class="ibox-content pb-0">
@@ -22,30 +22,33 @@
                 <table class="table table-hover table-striped mb-0">
                     <thead>
                         <tr>
-                            <th>Nro° de Orden</th>
+                            <th>Nro° de Contrato</th>
                             <th>Nro° de Presupuesto</th>
-                            <th>Fecha de creación</th>
-                            <th>Fecha de fin de trabajos</th>
+                            <th>Fecha de Creacion</th>
+                            <th>Fecha de Firma</th>
                             <th>Cliente</th>
                             <th>Obra</th>
                             <th>Descripción</th>
+                            <th>Plazo de cumplimiento</th>
+                            <th>Tema</th>
                             <th>Estado</th>
                             <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($order_services as $order_service)
+                        @foreach($contracts as $contract)
                             <tr>
-                                <td>{{ $order_service->id }}</td>
-                                <td>{{ $order_service->budget_id}}</td>
-                                <td>{{ $order_service->date_created }}</td>
-                                <td>{{ $order_service->date_ending }}</td>
-                                <td>{{ $order_service->client->razon_social }}</td>
-                                <td>{{ $order_service->construction_site->description }}</td>
-                                <td>{{ $order_service->observation }}</td>
-                                <td>Acciones</td>
+                                <td>{{ $contract->id }}</td>
+                                <td>{{ $contract->budget_service->id}}</td>
+                                <td>{{ $contract->date_created }}</td>
+                                <td>{{ $contract->date_signed }}</td>
+                                <td>{{ $contract->client->razon_social }}</td>
+                                <td>{{ $contract->construction_site->description }}</td>
+                                <td>{{ $contract->issue }}</td>
+                                <td>{{ $contract->term }} días</td>
+                                <td>{{ $contract->description }}</td>
                                 <td>
-                                    <span class="label label-{{ config('constants.budget_service_status_label.' . $order_service->status) }}">{{ config('constants.budget_service_status.'. $order_service->status) }}</span>
+                                    <span class="label label-{{ config('constants.contract_status_label.' . $contract->status) }}">{{ config('constants.contract_status.'. $contract->status) }}</span>
                                 </td>
                                 <td class="text-center">
                                     {{-- <a href="{{ url('wish-service/' . $wishservice->id) }}"><i class="fa fa-info-circle"></i></a> --}}
@@ -56,7 +59,7 @@
                     </tbody>
                 </table>
             </div>
-            {{ $order_services->appends(request()->query())->links() }}
+            {{ $contracts->appends(request()->query())->links() }}
         </div>
     </div>
 </div>

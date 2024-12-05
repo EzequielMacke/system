@@ -11,20 +11,14 @@ class OrderServiceDetail extends Model
     use HasFactory;
     protected $fillable = [
                             'order_id',
-                            'service_id',
-                            'input_id',
-                            'input_quantity'
+                            'oficial_id',
                         ];
         public function order_service()
     {
         return $this->hasMany('App\Models\OrderService');
     }
-    public function service()
+    public function oficial()
     {
-        return $this->belongsTo('App\Models\Service');
-    }
-    public function input()
-    {
-        return $this->belongsTo('App\Models\Input');
+        return $this->belongsTo('App\Models\Oficial');
     }
 }

@@ -146,16 +146,16 @@
 						</a>
 					</li>
 					<li class="provider">
-						<a href="{{ route('order_service') }}" title="Ordern de Servicio">
+						<a href="{{ route('contract') }}" title="Contrato">
+							<span>Contrato de Servicio</span>
+						</a>
+					</li>
+                    <li class="provider">
+						<a href="{{ route('order_service') }}" title="Orden de Servicio">
 							<span>Orden de Servicio</span>
 						</a>
 					</li>
 					{{-- <li class="provider">
-						<a href="{{ route('production-control') }}" title="Presupuesto">
-							<span>Contrato de Servicio</span>
-						</a>
-					</li>
-					<li class="provider">
 						<a href="{{ route('production-control-quality') }}" title="Presupuesto">
 							<span>Insumos utilizados</span>
 						</a>

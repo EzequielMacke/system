@@ -170,8 +170,15 @@ Route::group(['namespace' => 'App\Http\Controllers'], function (){
     Route::post('budget-service', 'BudgetServiceController@store')->name('budget_service.store');
     Route::get('ajax/wish', 'BudgetServiceController@ajax_wish')->name('ajax.wish');
 
+    Route::get('contracts', 'ContractController@index')->name('contract');
+	Route::get('contract/create', 'ContractController@create')->name('contract-create');
+    Route::post('contract', 'ContractController@store')->name('contract.store');
+    Route::get('ajax/contract', 'ContractController@ajax_contract')->name('ajax.contract');
+
     Route::get('order-service', 'OrderServiceController@index')->name('order_service');
     Route::get('order-service/create', 'OrderServiceController@create')->name('order_service_create');
     Route::post('order-service', 'OrderServiceController@store')->name('order_service.store');
+    Route::get('ajax/order', 'OrderServiceController@ajax_order')->name('ajax.order');
+
 
 });

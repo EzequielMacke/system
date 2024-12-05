@@ -14,7 +14,7 @@ class CreateBudgetsServiceDetailsTable extends Migration
     public function up()
     {
         Schema::create('budgets_service_details', function (Blueprint $table) {
-            $table->integer('id');
+            $table->increments('id');
             $table->unsignedInteger('budget_service_id');
             $table->foreign('budget_service_id')->references('id')->on('budgets_service');
             $table->unsignedInteger('service_id');
