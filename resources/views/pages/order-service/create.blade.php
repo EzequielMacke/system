@@ -22,15 +22,15 @@
 
                         <div class="form-group col-md-2">
                             <label>Fecha</label>
-                            <input class="form-control" type="text" name="date" value="{{ old('date', date('d/m/Y')) }}" readonly>
+                            <input class="form-control" type="text" name="date" id="date" value="{{ old('date', date('d/m/Y')) }}" readonly>
                         </div>
 
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-3">
-                        <label>Número de Orden de Servicio</label>
-                        <input class="form-control" type="text" name="address" value="{{ $newOrderNumber }}" readonly>
+                    <div class="col-md-1">
+                        <label>Nro Orden</label>
+                        <input class="form-control" type="text" name="order" value="{{ $newOrderNumber }}" readonly>
                     </div>
                     <div class="col-md-2">
                         <label>Plazo de finalización</label>
@@ -67,7 +67,6 @@
                                     <div class="form-group col-md-12">
                                         <label>Obra</label>
                                             <select class="form-control" name="site_id" id="site_id"></select>
-                                            {{-- {{ Form::select('site_id', $construction_sites, old('site_id'), ['class' => 'form-control', 'select2', 'id' => 'site_id']) }} --}}
                                     </div>
                                 </div>
                             </div>
@@ -149,9 +148,28 @@
                         <th></th>
                     </tr>
                 </thead>
-                <tbody id="tbody_funcionarios"></tbody>
+                <tbody ></tbody>
             </table>
         </div>
+        <div class="ibox-title">
+            <h3>Trabajos a realizar</h3>
+        </div>
+        <div class="ibox-content table-responsive no-padding">
+            <table class="table table-hover table-striped mb-0" id="service_table">
+                <thead>
+                    <tr>
+                        <th>Código de ensayo</th>
+                        <th>Ensayo</th>
+                        <th>Contidad de Ensayos</th>
+                        <th>Servicio</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
     </div>
     <div class="ibox-content pb-0">
         <div class="row">
@@ -163,7 +181,7 @@
     </div>
     <div class="ibox-footer">
         <input type="submit" class="btn btn-sm btn-success" value="Guardar">
-        <a href="{{ url('purchases-orders') }}" class="btn btn-sm btn-danger">Cancelar</a>
+        <a href="{{ url('order-service') }}" class="btn btn-sm btn-danger">Cancelar</a>
     </div>
 {{ Form::close() }}
 @endsection
@@ -306,21 +324,32 @@
                     data: { contract_id: contract_id },
                     success: function(response) {
                         $('#tbody_detail').empty();
-
                         $('#budget_service_id').val(response.budget_service_id);
                         $('#term').val(response.term);
                         $('#term').trigger('input');
-
-
-                        $.each(response.items, function(index, value) {
-                            addToTable(value.service_id, value.description, value.quantity, value.description, value.service_name);
+                        $.each(response.budget_service_detail, function(index, value) {
+                            addToServiceTable(index + 1,
+                            value.budget_service_id,
+                            value.service_id,
+                            value.quantity,
+                            value.price,
+                            value.level,
+                            value.total_price,
+                            value.quantity_per_meter,
+                            value.input_id,
+                            value.input_name,
+                            value.service_description,
+                            );
                         });
+
                     },
                     error: function(xhr, status, error) {
                         console.error(error);
                     }
                 });
             });
+
+
         });
         function addFuncionario() {
             var funcionario_name = $("select[name='funcionario_id'] option:selected").text();
@@ -355,10 +384,10 @@
             }
         }
 
-        function addToTable(id, name, role, document) {
+        function addToTable( id, name, role, document) {
             var table = $('#funcionarios_table tbody');
             var row = '<tr>' +
-                '<td>' + id + '</td>' +
+                '<td>' + id + '<input type="hidden" name="id_oficial[]" id="id_oficial" value="'+id+'"></td>' +
                 '<td>' + name + '</td>' +
                 '<td>' + role + '</td>' +
                 '<td>' + document + '</td>' +
@@ -366,6 +395,19 @@
                 '</tr>';
             table.append(row);
         }
+
+        function addToServiceTable(id, budget_service_id, service_id, quantity, price, level, total_price, quantity_per_meter, input_id, input_name, service_description) {
+            var table = $('#service_table tbody');
+            var row = '<tr>' +
+                '<td>' + input_id + '<input type="hidden" name="input_id[]" id="input_id" value="'+input_id+'"></td>' +
+                '<td>' + input_name + '</td>' +
+                '<td>' + quantity + '<input type="hidden" name="quantity[]" id="quantity" value="'+quantity+'"></td>' +
+                '<td>' + service_description + '<input type="hidden" name="service_id[]" id="service_id" value="'+service_id+'"></td>' +
+                '<td>' + total_price + '</td>' +
+                '</tr>';
+            table.append(row);
+        }
+
 
         function removeRow(button, id) {
             $(button).closest('tr').remove();

@@ -13,7 +13,7 @@ class CreateOrderOficialDetailsTable extends Migration
      */
     public function up()
     {
-        Schema::create('order_oficials_details', function (Blueprint $table) {
+        Schema::create('order_oficial_details', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('order_id');
             $table->foreign('order_id')->references('id')->on('order_services');
@@ -30,6 +30,6 @@ class CreateOrderOficialDetailsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('order_oficials_details');
+        Schema::dropIfExists('order_oficial_details');
     }
 }

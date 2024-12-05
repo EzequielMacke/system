@@ -6,16 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateOrderServiceRequest;
 use App\Models\Branch;
 use App\Models\BudgetService;
+use App\Models\BudgetServiceDetail;
 use App\Models\ConstructionSite;
 use App\Models\Contracts;
 use App\Models\Oficial;
 use App\Models\Oflicial;
+use App\Models\OrderOficialDetail;
 use App\Models\OrderService;
+use App\Models\OrderServiceDetail;
 use App\Models\Service;
 use App\Models\WishService;
 use App\Models\WishServiceDetail;
 use Barryvdh\DomPDF\Facade as PDF;
 use Carbon\Carbon;
+use CreateOrderOficialDetailsTable;
+use GuzzleHttp\Promise\Create;
 use Illuminate\Support\Facades\DB;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
@@ -58,26 +63,47 @@ class OrderServiceController extends Controller
         {
             DB::transaction(function() use ($request)
             {
-
                 $order = OrderService::create([
+                    'date_created'          =>Carbon::createFromFormat('d/m/Y', request()->date)->format('Y-m-d'),
+                    'date_ending'           => request()->date_ending,
                     'user_id'               => auth()->user()->id,
-                    'construction_site_id'  => request()->site_id,
-                    'budget_id'             => request()->budget_id,
+                    'branch_id'             => request()->branch_id,
+                    'contract_id'           =>  request()->contract_id,
                     'client_id'             => request()->client_id,
-                    'branch_id'              => request()->branch_id,
-                    'date'                  => Carbon::createFromFormat('d/m/Y', request()->date)->format('Y-m-d'),
-                    'start_date'            => Carbon::createFromFormat('Y-m-d', request()->start_date)->format('Y-m-d'),
+                    'constructionsite_id'   => request()->site_id ,
+                    'budget_id'             => request()->budget_service_id,
                     'observation'           => request()->observation,
                     'status'                => 1
                 ]);
-
-                // Grabar los Productos
-                foreach($request->service_id as $key => $value)
-                {
-                    $order->order_service_details()->create([
-                        'order_service_id'          => $order->id,
-                        'service_id'                => $value,
-                        'quantity'                  => $request->quantity[$key],
+                $dataser = request()->all();
+                $detailsers = [];
+                $detaoficials = [];
+                foreach ($dataser['input_id'] as $key => $value) {
+                    $detailsers[] = [
+                        'order_id' => $order->id,
+                        'input_id' => $dataser['input_id'][$key],
+                        'service_id' => $dataser['service_id'][$key],
+                        'input_quantity' => $dataser['quantity'][$key],
+                    ];
+                }
+                foreach ($dataser['id_oficial'] as $key => $value) {
+                    $detaoficials[] = [
+                        'order_id' => $order->id,
+                        'oficial_id' => $dataser['id_oficial'][$key],
+                    ];
+                }
+                foreach ($detailsers as $detailser ) {
+                    OrderServiceDetail::create([
+                        'order_id'              => $detailser['order_id'],
+                        'input_id'              => $detailser['input_id'],
+                        'service_id'            => $detailser['service_id'],
+                        'input_quantity'        => $detailser['input_quantity'],
+                    ]);
+                }
+                foreach ($detaoficials as $detaoficial ) {
+                    OrderOficialDetail::create([
+                        'order_id'              => $detaoficial['order_id'],
+                        'oficial_id'             => $detaoficial['oficial_id'],
                     ]);
                 }
             });
@@ -279,7 +305,24 @@ class OrderServiceController extends Controller
                 $results['id'] = $contracts->id;
                 $results['term'] = $contracts->term;
                 $results['budget_service_id'] = $contracts->budget_service_id;
+            $budget = BudgetServiceDetail::where('budget_service_id', $results['budget_service_id'])
+                ->get();
+                foreach ($budget as $key => $value) {
+                    $results['budget_service_detail'][$key]['id'] = $value->id;
+                    $results['budget_service_detail'][$key]['budget_service_id'] = $value->budget_service_id;
+                    $results['budget_service_detail'][$key]['service_id'] = $value->service_id;
+                    $results['budget_service_detail'][$key]['quantity'] = $value->quantity;
+                    $results['budget_service_detail'][$key]['price'] = $value->price;
+                    $results['budget_service_detail'][$key]['level'] = $value->level;
+                    $results['budget_service_detail'][$key]['total_price'] = $value->total_price;
+                    $results['budget_service_detail'][$key]['quantity_per_meter'] = $value->quantity_per_meter;
+                    $results['budget_service_detail'][$key]['input_id'] = $value->input_id;
+                    $results['budget_service_detail'][$key]['input_name'] = $value->input->description;
+                    $results['budget_service_detail'][$key]['service_description'] = $value->service->description;
+                }
+
         }
+
 
         return response()->json($results);
     }

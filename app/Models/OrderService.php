@@ -13,13 +13,19 @@ class OrderService extends Model
                             'date_created',
                             'date_ending',
                             'branch_id',
+                            'user_id',
                             'contract_id',
                             'client_id',
-                            'contruction_site_id',
+                            'constructionsite_id',
                             'budget_id',
                             'status',
                             'observation'
                         ];
+        public function setDateAttribute($value)
+    {
+        $this->attributes['date_created'] = Carbon::createFromFormat('d/m/Y', $value)->format('Y-m-d');
+        $this->attributes['date_ending'] = Carbon::createFromFormat('d/m/Y', $value)->format('Y-m-d');
+    }
         public function branch()
     {
         return $this->belongsTo('App\Models\Branch');
@@ -47,5 +53,9 @@ class OrderService extends Model
          public function order_service_details()
     {
         return $this->hasMany('App\Models\OrderServiceDetail');
+    }
+    public function user()
+    {
+        return $this->belongsTo('App\Models\User');
     }
 }
