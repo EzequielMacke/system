@@ -34,8 +34,8 @@
                         @foreach($promotions as $promotion)
                             <tr>
                                 <td>{{ $promotion->id }}</td>
-                                <td>{{ $promotion->date_created }}</td>
-                                <td>{{ $promotion->date_ending }}</td>
+                                <td>{{ $promotion->start_date }}</td>
+                                <td>{{ $promotion->end_date }}</td>
                                 <td>{{ $promotion->description }}</td>
                                 <td>
                                     <span class="label label-{{ config('constants.promotions_label.' . $promotion->status) }}">{{ config('constants.promotions.'. $promotion->status) }}</span>

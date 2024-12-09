@@ -27,6 +27,7 @@ class ContractController extends Controller
     public function index()
     {
         $contracts = Contracts::with('client','construction_site')->orderBy('id');
+
         if(request()->s)
         {
             $contracts = $contracts->whereHas('construction_site', function($query){
@@ -35,7 +36,6 @@ class ContractController extends Controller
                 $query2->where('razon_social','LIKE', '%'. request()->s . '%');
             });
         }
-
         $contracts = $contracts->paginate(20);
         return view('pages.contract.index', compact('contracts'));
     }
@@ -68,6 +68,11 @@ class ContractController extends Controller
                         'issue'                => request()->issue,
                         'status'                => 1
                 ]);
+                $budget_service = BudgetService::find($request->budget_id);
+                if ($budget_service) {
+                    $budget_service->status = 2;
+                    $budget_service->save();
+                }
                 $contracte = request()->all();
                 $detailsoblis = [];
                 foreach ($contracte['service_id-obli'] as $key => $service_id) {
@@ -122,6 +127,17 @@ class ContractController extends Controller
             ]);
         }
         abort(404);
+    }
+
+    public function changeStatus($id)
+    {
+        $contract = Contracts::find($id);
+        if ($contract && $contract->status == 1) {
+            $contract->status = 3;
+            $contract->save();
+            return response()->json(['success' => true]);
+        }
+        return response()->json(['success' => false], 404);
     }
 
     public function show(WishProduction $wish_production)

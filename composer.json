@@ -7,7 +7,7 @@
     "require": {
         "php": "^7.3|^8.0",
         "almasaeed2010/adminlte": "~2.4",
-        "barryvdh/laravel-dompdf": "^2.0",
+        "barryvdh/laravel-dompdf": "2.1",
         "brian2694/laravel-toastr": "^5.5",
         "doctrine/dbal": "^3.8",
         "fideloper/proxy": "^4.4",

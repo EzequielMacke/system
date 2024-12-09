@@ -45,6 +45,13 @@
                                     <span class="label label-{{ config('constants.budget_service_status_label.' . $budgetservice->status) }}">{{ config('constants.budget_service_status.'. $budgetservice->status) }}</span>
                                 </td>
                                 <td class="text-center">
+                                    @if($budgetservice->status == 1)
+                                        <button type="button" class="btn btn-danger btn-xs change-status-button" data-id="{{ $budgetservice->id }}">Eliminar</button>
+                                        {{-- <a href="{{ route('budget_service.edit', $budgetservice->id) }}" class="btn btn-warning btn-xs">Modificar</a> --}}
+                                        <a href="#" class="btn btn-warning btn-xs">Modificar</a>
+                                    @endif
+                                </td>
+                                <td class="text-center">
                                     {{-- <a href="{{ url('wish-service/' . $wishservice->id) }}"><i class="fa fa-info-circle"></i></a> --}}
                                     {{-- <a href="{{ url('wish-service/' . $wishservices->id . '/edit') }}"target="_blank" data-toggle="tooltip"><i class="fa fa-pencil"></i></a> --}}
                 </div>
@@ -57,4 +64,33 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('layout_js')
+    <script>
+$(document).ready(function() {
+    // Manejar el clic en el botón de cambiar estado
+    $(document).on('click', '.change-status-button', function() {
+        var id = $(this).data('id');
+        var confirmed = confirm('¿Estás seguro de que deseas cambiar eliminar el presupuesto?');
+        if (confirmed) {
+            $.ajax({
+                url: '{{ url('budget-service/change-status') }}/' + id,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Error al cambiar el estado.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error(error);
+                    alert('Error al cambiar el estado.');
+                }
+            });
+        }
+    });
+});
+</script>
 @endsection

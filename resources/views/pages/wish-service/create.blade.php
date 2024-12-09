@@ -67,52 +67,62 @@
         </div>
         <div class="ibox-content pb-0">
             <div class="row">
-                <div class="form-group col-md-4">
-                    <label>Servicios</label>
-                    {{ Form::select('service_id', $services, old('service_id'), ['id' => 'service_id', 'placeholder' => 'Seleccione Servicio', 'class' => 'form-control', 'select2']) }}
-                    <span class="red" id="text_last_purchases"></span>
-                </div>
-                <div class="form-group col-md-2">
-                    <label>Metros Cuadrados</label>
-                    <input class="form-control" type="text" name="quantity" value="{{ old('quantity') }}" placeholder="Cantidad">
-                </div>
-                <div class="form-group col-md-2">
-                    <label>Niveles</label>
-                    <input class="form-control" type="text" name="level" value="{{ old('level') }}" placeholder="Niveles">
-                </div>
-                <div class="form-group col-md-1">
-                    <label>Agregar</label>
-                    <button type="button" class="btn btn-success" id="button_add_product"><i class="fa fa-plus"></i></button>
+                <div class="col-lg-12">
+                    <div class="ibox float-e-margins">
+                        <div class="ibox-title">
+                            <h5>Crear Pedido Servicio</h5>
+                        </div>
+                        <div class="ibox-content pb-0">
+                            <div class="row">
+                                <div class="form-group col-md-4">
+                                    <label>Servicio</label>
+                                    {{ Form::select('service_id', $services, null, ['class' => 'form-control', 'id' => 'service_id']) }}
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Metros Cuadrados</label>
+                                    <input class="form-control" type="number" name="quantity" id="quantity" value="{{ old('quantity') }}" placeholder="Cantidad">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Niveles</label>
+                                    <input class="form-control" type="text" name="level" id="level" value="{{ old('level') }}" placeholder="Niveles">
+                                </div>
+                                <div class="form-group col-md-1">
+                                    <label>Agregar</label>
+                                    <button type="button" class="btn btn-success" id="button_add_product"><i class="fa fa-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ibox-content table-responsive no-padding" id="detail_product">
+                            <table class="table table-hover table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th class="text-right">Cód</th>
+                                        <th>Producto</th>
+                                        <th class="text-right">Metros Cuadrados</th>
+                                        <th class="text-right">Niveles</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody_detail"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="ibox-content pb-0">
+                        <div class="row">
+                            <div class="form-group col-md-7">
+                                <label>Observación</label>
+                                <textarea class="form-control" name="observation" rows="4">{{ old('observation') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-footer">
+                        <input type="submit" class="btn btn-sm btn-success" value="Guardar">
+                        <a href="{{ url('wish-service') }}" class="btn btn-sm btn-danger">Cancelar</a>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="ibox-content table-responsive no-padding" id="detail_product">
-            <table class="table table-hover table-striped mb-0">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th class="text-right">Cód</th>
-                        <th>Producto</th>
-                        <th class="text-right">Cantidad</th>
-                        <th class="text-right">Niveles</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="tbody_detail"></tbody>
-            </table>
-        </div>
-    </div>
-    <div class="ibox-content pb-0">
-        <div class="row">
-            <div class="form-group col-md-7">
-                <label>Observación</label>
-                <textarea class="form-control" name="observation" rows="4">{{ old('observation') }}</textarea>
-            </div>
-        </div>
-    </div>
-    <div class="ibox-footer">
-        <input type="submit" class="btn btn-sm btn-success" value="Guardar">
-        <a href="{{ url('purchases-orders') }}" class="btn btn-sm btn-danger">Cancelar</a>
     </div>
 {{ Form::close() }}
 @endsection
@@ -145,10 +155,6 @@
                         $('input[type="submit"]').prop('disabled', false);
                     }
                 });
-            });
-
-            $("#button_add_product").click(function() {
-                addProduct();
             });
 
             $("#client_id").select2({
@@ -207,62 +213,68 @@
                     }
                 });
             });
+
+                $('#button_add_product').click(function() {
+                var service_id = $('#service_id').val();
+                var service_name = $('#service_id option:selected').text();
+                var quantity = $('#quantity').val();
+                var level = $('#level').val();
+
+                // Validar que los campos no estén vacíos
+                if (!service_id) {
+                    alert('Por favor, seleccione un servicio.');
+                    return;
+                }
+                if (!quantity || quantity <= 0) {
+                    alert('Por favor, ingrese una cantidad válida.');
+                    return;
+                }
+                if (!level) {
+                    alert('Por favor, ingrese el nivel.');
+                    return;
+                }
+
+                // Validar que el servicio no se agregue dos veces
+                var exists = false;
+                $('#tbody_detail tr').each(function() {
+                    var existing_service_id = $(this).find('.service_id').val();
+                    if (existing_service_id == service_id) {
+                        exists = true;
+                        return false; // salir del bucle
+                    }
+                });
+
+                if (exists) {
+                    alert('El servicio ya ha sido agregado.');
+                    return;
+                }
+
+                var newRow = '<tr>' +
+                    '<td>' + (++counter) + '</td>' +
+                    '<td class="text-right">' + service_id + '</td>' +
+                    '<td>' + service_name + '</td>' +
+                    '<td class="text-right">' + quantity + '</td>' +
+                    '<td class="text-right">' + level + '</td>' +
+                    '<td><button type="button" class="btn btn-danger btn-sm remove-product">Eliminar</button></td>' +
+                    '<input type="hidden" name="service_id[]" class="service_id" value="' + service_id + '">' +
+                    '<input type="hidden" name="quantity[]" value="' + quantity + '">' +
+                    '<input type="hidden" name="level[]" value="' + level + '">' +
+                    '</tr>';
+                $('#tbody_detail').append(newRow);
+
+                // Limpiar los campos de entrada
+                $('#service_id').val('');
+                $('#quantity').val('');
+                $('#level').val('');
+            });
+
+            // Eliminar servicio
+            $(document).on('click', '.remove-product', function() {
+                $(this).closest('tr').remove();
+                counter--;
+            });
         });
 
-        function addProduct() {
-    var service_name = $("select[name='service_id'] option:selected").text();
-    var service_id = $("select[name='service_id']").val();
-    var product_description = '';
-    var quantity = $("input[name='quantity']").val().replace(/\./g, '');
-    var level = $("input[name='level']").val(); // Obtener el valor del nivel
-    quantity = (quantity > 0 ? quantity : 1);
-
-    if (service_id != '' && quantity != '' && level != '') { // Verificar que el nivel no esté vacío
-        if ($.inArray(service_id, invoice_items_array) != '-1') {
-            if (confirm('Ya existe el producto, desea continuar?')) {
-                var description = product_description ? product_description : service_name;
-                addToTable(service_id, description, quantity, product_description, level); // Pasar el nivel
-            } else {
-                return false;
-            }
-        } else {
-            var description = product_description ? product_description : service_name;
-            addToTable(service_id, description, quantity, product_description, level); // Pasar el nivel
-        }
-        $('#service_id').val(null).trigger('change');
-        $("#products_description").val('');
-        $("input[name='quantity']").val('');
-        $("input[name='level']").val(''); // Limpiar el campo de nivel
-    } else {
-        swal({
-            title: "SISTEMA",
-            text: "Hay campos vacíos",
-            icon: "warning",
-            button: "OK",
-        });
-        return false;
-    }
-}
-
-function addToTable(service_id, description, quantity, product_description, level) {
-    // Aquí puedes agregar la lógica para agregar la fila a la tabla
-    $('#tbody_detail').append('<tr>' +
-        '<td>' + counter + '</td>' +
-        '<td class="text-right">' + service_id + ' <input type="hidden" name="service_id[]" value="' + service_id + '"></td>' +
-        '<td>' + description + '<input type="hidden" name="service_name[]" value="' + description + '"></td>' +
-        '<td class="text-right"><input type="text" class="form-control" name="quantity[]" value="' + quantity + '"></td>' +
-        '<td class="text-right">' + level + '<input type="hidden" name="level[]" value="' + level + '"></td>' + // Nueva columna para nivel
-        '<td class="text-right"><a href="javascript:;" onClick="removeRow(this, ' + service_id + ');"><i style="font-size:17px;" class="fa fa-times"></i></a></td>' +
-    '</tr>');
-}
-
-        function removeRow(t, service_id)
-        {
-            $(t).parent().parent().remove();
-            invoice_items_array.splice($.inArray(service_id, invoice_items_array), 1 );
-            // calculateGrandTotal();
-            counter--;
-        }
 
     </script>
 @endsection

@@ -26,6 +26,7 @@
                             <th>Fecha</th>
                             <th>Cliente</th>
                             <th>Obra</th>
+                            <th>Descripcion</th>
                             <th>Estado</th>
                             <th class="text-center">Acciones</th>
                         </tr>
@@ -37,8 +38,17 @@
                                 <td>{{ $wishservice->date_wish }}</td>
                                 <td>{{ $wishservice->client->razon_social }}</td>
                                 <td>{{ $wishservice->construction_site->description }}</td>
+                                <td>{{ $wishservice->observation }}</td>
                                 <td>
                                     <span class="label label-{{ config('constants.wish_service_status_label.' . $wishservice->status) }}">{{ config('constants.wish_service_status.'. $wishservice->status) }}</span>
+                                </td>
+                                <td class="text-center">
+                                    @if($wishservice->status != 3 && $wishservice->status != 2)
+                                        <button type="button" class="btn btn-danger btn-xs change-status-button" data-id="{{ $wishservice->id }}">Eliminar</button>
+                                    @endif
+                                    @if($wishservice->status == 1)
+                                        <a href="{{ url('wish-service/' . $wishservice->id . '/edit') }}" class="btn btn-warning btn-xs">Modificar</a>
+                                    @endif
                                 </td>
                                 <td class="text-center">
                                     {{-- <a href="{{ url('wish-service/' . $wishservice->id) }}"><i class="fa fa-info-circle"></i></a> --}}
@@ -53,4 +63,31 @@
         </div>
     </div>
 </div>
+@endsection
+@section('layout_js')
+    <script>
+        $(document).ready(function() {
+            $(document).on('click', '.change-status-button', function() {
+                var id = $(this).data('id');
+                var confirmed = confirm('¿Estás seguro de que deseas cambiar el estado?');
+                if (confirmed) {
+                    $.ajax({
+                        url: '{{ url('wish-service/change-status') }}/' + id,
+                        method: 'GET',
+                        success: function(response) {
+                            if (response.success) {
+                                location.reload();
+                            } else {
+                                alert('Error al cambiar el estado.');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(error);
+                            alert('Error al cambiar el estado.');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 @endsection

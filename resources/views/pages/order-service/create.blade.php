@@ -28,7 +28,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <label>Nro Orden</label>
                         <input class="form-control" type="text" name="order" value="{{ $newOrderNumber }}" readonly>
                     </div>

@@ -77,20 +77,24 @@ return [
         2 => 'Soltero/a'
     ],
     'wish_service_status'=>[
-        1=> 'Activo',
-        2=> 'Inactivo'
+        1=> 'Pendiente',
+        2=> 'Confirmado',
+        3=> 'Anulado',
     ],
     'wish_service_status_label'=>[
-        1=> 'success',
-        2=> 'warning'
+        1=> 'warning',
+        2=> 'success',
+        3=> 'danger',
     ],
     'budget_service_status'=>[
-        1=> 'Activo',
-        2=> 'Inactivo'
+        1=> 'Pendiente',
+        2=> 'Confirmado',
+        3=> 'Anulado',
     ],
     'budget_service_status_label'=>[
-        1=> 'success',
-        2=> 'warning'
+        1=> 'warning',
+        2=> 'success',
+        3=> 'danger',
     ],
     'tax'=>[
         1=> '5%',
@@ -104,21 +108,33 @@ return [
     ],
     'contract_status'=>[
         1=> 'Pendiente',
-        2=> 'En curso',
-        3=> 'Culminado'
+        2=> 'Confirmado',
+        3=> 'Anulado',
     ],
     'contract_status_label'=>[
-        1=> 'danger',
-        2=> 'warning',
-        3=> 'success'
+        1=> 'warning',
+        2=> 'success',
+        3=> 'danger',
+    ],
+    'order_status'=>[
+        1=> 'Pendiente',
+        2=> 'Confirmado',
+        3=> 'Anulado',
+    ],
+    'order_status_label'=>[
+        1=> 'warning',
+        2=> 'success',
+        3=> 'danger',
     ],
     'oficial_status'=>[
-        1=> 'Activo',
-        2=> 'Inactivo'
+        1=> 'Pendiente',
+        2=> 'Confirmado',
+        3=> 'Anulado',
     ],
-    'contract_status_label'=>[
-        1=> 'success',
-        2=> 'warning'
+    'oficial_statuss_label'=>[
+        1=> 'warning',
+        2=> 'success',
+        3=> 'danger',
     ],
     'posts'=>[
         1=> 'Tecnico',
@@ -126,6 +142,49 @@ return [
         3=> 'Ayudante',
         4=> 'Programador Junior',
         5=> 'Chofer'
+    ],
+    'input_used_status'=>[
+        1=> 'Pendiente',
+        2=> 'Confirmado',
+        3=> 'Anulado',
+    ],
+    'input_used_status_label'=>[
+        1=> 'warning',
+        2=> 'success',
+        3=> 'danger',
+    ],
+    'measurement'=>[
+        1=> 'Kilogramo',
+        2=> 'gramo',
+        3=> 'm3',
+        4=> 'm2',
+        5=> 'unidad',
+        6=> 'Litro',
+        7=> 'Metro',
+        8=> 'Centimetro',
+        9=> 'Toneladas',
+    ],
+    'Material'=>[
+        1=> 'Activo',
+        2=> 'Inactivo',
+    ],
+    'customer_complaints_status'=>[
+        1=> 'En proceso',
+        2=> 'Resuelto',
+    ],
+    'customer_complaints_status_label'=>[
+        1=> 'danger',
+        2=> 'success',
+    ],
+    'promotions'=>[
+        1=> 'Pendiente',
+        2=> 'Confirmado',
+        3=> 'Anulado',
+    ],
+    'promotions_label'=>[
+        1=> 'warning',
+        2=> 'success',
+        3=> 'danger',
     ],
 ]
 ?>

@@ -1,5 +1,12 @@
 <?php
 
+use App\Http\Controllers\BudgetServiceController;
+use App\Http\Controllers\ContractController;
+use App\Http\Controllers\CustomerComplaintsController;
+use App\Http\Controllers\InputUsedController;
+use App\Http\Controllers\OrderServiceController;
+use App\Http\Controllers\PromotionsController;
+use App\Http\Controllers\WishServiceController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -164,21 +171,49 @@ Route::group(['namespace' => 'App\Http\Controllers'], function (){
     Route::post('wish-service', 'WishServiceController@store')->name('wish_service.store');
     Route::get('ajax/clients', 'ClienteController@ajax_clients')->name('ajax.clients');
     Route::get('ajax/sites', 'WishServiceController@ajax_sites')->name('ajax.sites');
+    Route::get('wish-service/change-status/{id}', [WishServiceController::class, 'changeStatus'])->name('wish_service.change_status');
+    Route::get('wish-service/{id}/edit', [WishServiceController::class, 'edit'])->name('wish_service.edit');
+    Route::put('wish-service/{id}', [WishServiceController::class, 'update'])->name('wish_service.update');
+    Route::get('ajax/sites2', [WishServiceController::class, 'ajax_sites2'])->name('ajax.sites2');
 
     Route::get('budget-service', 'BudgetServiceController@index')->name('budget_service');
 	Route::get('budget-service/create', 'BudgetServiceController@create')->name('budget_service_create');
     Route::post('budget-service', 'BudgetServiceController@store')->name('budget_service.store');
     Route::get('ajax/wish', 'BudgetServiceController@ajax_wish')->name('ajax.wish');
+    Route::get('budget-service/{id}/edit', [BudgetServiceController::class, 'edit'])->name('budget_service.edit');
+    Route::put('budget-service/{id}', [BudgetServiceController::class, 'update'])->name('budget_service.update');
+    Route::get('budget-service/change-status/{id}', [BudgetServiceController::class, 'changeStatus'])->name('budget_service.change_status');
+
 
     Route::get('contracts', 'ContractController@index')->name('contract');
 	Route::get('contract/create', 'ContractController@create')->name('contract-create');
     Route::post('contract', 'ContractController@store')->name('contract.store');
     Route::get('ajax/contract', 'ContractController@ajax_contract')->name('ajax.contract');
+    Route::get('contract/change-status/{id}', [ContractController::class, 'changeStatus'])->name('contract.change_status');
 
     Route::get('order-service', 'OrderServiceController@index')->name('order_service');
     Route::get('order-service/create', 'OrderServiceController@create')->name('order_service_create');
     Route::post('order-service', 'OrderServiceController@store')->name('order_service.store');
     Route::get('ajax/order', 'OrderServiceController@ajax_order')->name('ajax.order');
+    Route::get('order-service/change-status/{id}', [OrderServiceController::class, 'changeStatus'])->name('order_service.change_status');
 
 
+    Route::get('input-used', 'InputUsedController@index')->name('input_used');
+    Route::get('input-used/create', 'InputUsedController@create')->name('input_used_create');
+    Route::post('input-used', 'InputUsedController@store')->name('input_used.store');
+    Route::get('ajax/inputused', 'InputUsedController@ajax_inputused')->name('ajax.inputused');
+    Route::get('input-used/change-status/{id}', [InputUsedController::class, 'changeStatus'])->name('input_used.change_status');
+    Route::get('input-used/{id}/pdf', [InputUsedController::class, 'generatePDF'])->name('input_used.pdf');
+
+    Route::get('customer-complaints', 'CustomerComplaintsController@index')->name('customer_complaints');
+    Route::get('customer-complaints/create', 'CustomerComplaintsController@create')->name('customer_complaints_create');
+    Route::post('customer-complaints', 'CustomerComplaintsController@store')->name('customer_complaints.store');
+    Route::get('ajax/customer', 'CustomerComplaintsController@ajax_customer')->name('ajax.customer');
+    Route::get('customer-complaint/change-status/{id}', [CustomerComplaintsController::class, 'changeStatus'])->name('customer_complaint.change_status');
+
+    Route::get('promotions', [PromotionsController::class, 'index'])->name('promotions.index');
+    Route::get('promotions/create', [PromotionsController::class, 'create'])->name('promotions.create');
+    Route::post('promotions', [PromotionsController::class, 'store'])->name('promotions.store');
+    Route::get('promotions/change-status/{id}', [PromotionsController::class, 'changeStatus'])->name('promotions.change_status');
+    Route::get('promotions/{id}/edit', [PromotionsController::class, 'edit'])->name('promotions.edit');
 });

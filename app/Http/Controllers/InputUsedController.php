@@ -3,80 +3,121 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\CreateBudgetsServiceRequest;
-use App\Http\Requests\CreateWishServiceRequest;
+use App\Http\Requests\CreateOrderServiceRequest;
 use App\Models\Branch;
 use App\Models\BudgetService;
 use App\Models\BudgetServiceDetail;
 use App\Models\ConstructionSite;
+use App\Models\Contracts;
 use App\Models\Input;
+use App\Models\InputMaterialDetails;
+use App\Models\InputUsedDetails;
+use App\Models\InputUseds;
+use App\Models\Materials;
+use App\Models\Oficial;
+use App\Models\Oflicial;
+use App\Models\OrderOficialDetail;
+use App\Models\OrderService;
+use App\Models\OrderServiceDetail;
 use App\Models\Service;
 use App\Models\WishService;
 use App\Models\WishServiceDetail;
-use Barryvdh\DomPDF\Facade as PDF;
+use Barryvdh\DomPDF\Facade;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use CreateInputMaterialDetailsTable;
+use CreateOrderOficialDetailsTable;
+use GuzzleHttp\Promise\Create;
 use Illuminate\Support\Facades\DB;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
+use League\CommonMark\Node\Block\Document;
 
-class BudgetServiceController extends Controller
+
+class InputUsedController extends Controller
 {
+    public function generatePDF($id)
+    {
+        $input_used = InputUseds::with('client', 'construction_site')->findOrFail($id);
+
+        $pdf = Pdf::loadView('pdf.input_used', compact('input_used'));
+
+        return $pdf->download('input_used_' . $input_used->id . '.pdf');
+    }
+
     public function index()
     {
-        $budgetservices = BudgetService::with('client','construction_site')->orderBy('id');
+        $input_useds = InputUseds::with('client','construction_site')->orderBy('id');
         if(request()->s)
         {
-            $budgetservices = $budgetservices->whereHas('construction_site', function($query){
+            $input_useds = $input_useds->whereHas('construction_site', function($query){
                 $query->where('description','LIKE', '%'. request()->s . '%');
             })->OrwhereHas('client', function($query2){
                 $query2->where('razon_social','LIKE', '%'. request()->s . '%');
             });
         }
 
-        $budgetservices = $budgetservices->paginate(20);
-        return view('pages.budget-service.index', compact('budgetservices'));
+        $input_useds = $input_useds->paginate(20);
+        return view('pages.input-used.index', compact('input_useds'));
     }
 
     public function create()
     {
+        $lastinput = InputUseds::orderBy('id', 'desc')->first();
+        $newInputNumber = $lastinput ? $lastinput->id + 1 : 1;
         $construction_sites      = ConstructionSite::pluck('description', 'id');
         $branches               = Branch::where('status', true)->pluck('name', 'id');
         $services               = Service::pluck('description', 'id');
-        return view('pages.budget-service.create', compact('construction_sites' , 'branches', 'services'));
+        $oficial                = Oficial::all();
+        $const = array(config('constants'));
+        $posts = $const[0]['posts'];
+        return view('pages.input-used.create', compact('construction_sites' , 'branches', 'services','newInputNumber','oficial','posts'));
     }
 
-    public function store(CreateBudgetsServiceRequest $request)
+    public function store(CreateOrderServiceRequest $request)
     {
         if(request()->ajax())
         {
             DB::transaction(function() use ($request)
             {
-
-                $budget = BudgetService::create([
-                        'description'           => request()->observation,
-                        'user_id'               => auth()->user()->id,
-                        'client_id'             => request()->client_id,
-                        'wish_service_id'       => request()->wish_id,
-                        'constructionsite_id'   => request()->site_id,
-                        'date_budgets'          => Carbon::createFromFormat('d/m/Y', request()->date)->format('Y-m-d'),
-                        'tax'                   => request()->tax,
-                        'currency'              => request()->currency,
-                        'branch_id'             => request()->branch_id,
-                        'status'                => 1
+                $input = InputUseds::create([
+                    'description'           => request()->observation,
+                    'client_id'             => request()->client_id,
+                    'branch_id'             => request()->branch_id,
+                    'order_id'              => request()->order_id,
+                    'user_id'               => auth()->user()->id,
+                    'date_created'          =>Carbon::createFromFormat('d/m/Y', request()->date)->format('Y-m-d'),
+                    'constructionsite_id'   => request()->site_id ,
+                    'status'                => 1,
                 ]);
-                foreach ($request->input_id as $key => $value) {
-                    $input_value = explode("-",$value);
-                    $precio = str_replace([',', '.'], '', $request->price[$key]);
-                    $budget->budget_service_detail()->create([
-                        'budget_service_id' => $budget->id, // ID del presupuesto
-                        'service_id' => $input_value[0], // ID del servicio
-                        'quantity' => $request->new_metro[$key], // Cantidad del servicio
-                        'price' => intval($precio), // Precio del servicio
-                        'level' => $request->new_level[$key], // Nivel
-                        'total_price' => ($request->new_metro[$key] * intval($precio)) * $request->new_level[$key], // Precio total
-                        'quantity_per_meter' => $request->quantity_per_meter[$key] ?? 0, // Cantidad por metro
-                        'input_id' => $input_value[1] // ID de entrada convertido a entero
+                $datainput = request()->all();
+                $detinputs = [];
+                foreach ($datainput['regi'] as $key => $value) {
+                    $detinputs[] = [
+                        'input_used_id' => $input->id,
+                        'input_id' => $datainput['input_idaux'][$key],
+                        'input_quantity' => $datainput['input_quantityaux'][$key],
+                        'id_material' => $datainput['material_id'][$key],
+                        'material_quantity' => $datainput['material_quantity'][$key],
+                        'measurement' => $datainput['mesarument_id'][$key],
+                        'total_quantity' => $datainput['subtotal'][$key],
+                    ];
+                }
+                foreach ($detinputs as $detinput ) {
+                    InputUsedDetails::create([
+                            'input_used_id'           => $detinput['input_used_id'],
+                            'input_id'                => $detinput['input_id'],
+                            'input_quantity'          => $detinput['input_quantity'],
+                            'id_material'             => $detinput['id_material'],
+                            'material_quantity'       => $detinput['material_quantity'],
+                            'measurement'             => $detinput['measurement'],
+                            'total_quantity'          => $detinput['total_quantity'],
                     ]);
+                }
+                $orderchange = OrderService::find($request->order_id);
+                if ($orderchange) {
+                    $orderchange->status = 2;
+                    $orderchange->save();
                 }
             });
 
@@ -86,6 +127,18 @@ class BudgetServiceController extends Controller
         }
         abort(404);
     }
+
+    public function changeStatus($id)
+    {
+        $Inputused = InputUseds::find($id);
+        if ($Inputused && $Inputused->status == 1) {
+            $Inputused->status = 3;
+            $Inputused->save();
+            return response()->json(['success' => true]);
+        }
+        return response()->json(['success' => false], 404);
+    }
+
 
     public function show(WishProduction $wish_production)
     {
@@ -251,63 +304,58 @@ class BudgetServiceController extends Controller
         return str_replace(',', '.',str_replace('.', '', $value));
     }
 
-    public function ajax_wish()
+    public function ajax_inputused()
     {
-        if(request()->ajax())
+    if(request()->ajax())
+    {
+        $results = [];
+        if(request()->client_id && request()->site_id)
         {
-            $results   = [];
-            if(request()->client_id && request()->site_id && request()->type == 'presupuesto')
-            {
-                $sites = BudgetService::where('client_id',request()->client_id)->where('constructionsite_id',request()->site_id)->where('status',1)->get();
-                foreach ($sites as $key => $site) {
-                    $results['items'][$key]['id']               = $site->id;
-                    $results['items'][$key]['date_budget']      = $site->id.' - '.Carbon::createFromFormat('Y-m-d',$site->date_budgets)->format('d/m/Y');
-                }
+            $orders = OrderService::where('client_id', request()->client_id)
+                                  ->where('constructionsite_id', request()->site_id)
+                                  ->where('status', 1)
+                                  ->get();
+
+            foreach ($orders as $key => $order) {
+                $results['items'][$key] = [
+                    'id' => $order->id,
+                    'date_created' => $order->date_created,
+                    'description' => $order->description,
+                ];
             }
-            else if(request()->budget_id)
-            {
-                $sites = BudgetServiceDetail::where('budget_service_id',request()->budget_id)->get();
-                foreach ($sites as $key => $site) {
-                    $results['items'][$key]['id']               = $site->id;
-                    $results['items'][$key]['service_id']       = $site->service_id;
-                    $results['items'][$key]['service_name']     = $site->service->description;
-                    $results['items'][$key]['quantity']         = $site->quantity;
-                    $results['items'][$key]['level']            = $site->level;
-                    $results['items'][$key]['description']      = '';
-                }
-            }
-            else if(request()->client_id && request()->site_id)
-            {
-                $sites = WishService::where('client_id',request()->client_id)->where('construction_site_id',request()->site_id)->where('status',1)->get();
-                foreach ($sites as $key => $site) {
-                    $results['items'][$key]['id']               = $site->id;
-                    $results['items'][$key]['date_budget']      = $site->id.' - '.Carbon::createFromFormat('Y-m-d',$site->date_wish)->format('d/m/Y');
-                }
-            }
-            else if(request()->wish_id)
-            {
-                $sites = WishServiceDetail::where('wish_services_id',request()->wish_id)->get();
-                foreach ($sites as $key0 => $site)
-                {
-                    $services = Input::where('typeofservice',$site->services_id)->get();
-                    foreach ($services as $key => $service)
-                    {
-                        $results['items'][$site->id.' '.$key]['id']               = $site->id;
-                        $results['items'][$site->id.' '.$key]['service_id']       = $site->services_id;
-                        $results['items'][$site->id.' '.$key]['service_name']     = $site->service->description;
-                        $results['items'][$site->id.' '.$key]['quantity']         = $site->quantity;
-                        $results['items'][$site->id.' '.$key]['level']            = $site->level;
-                        $results['items'][$site->id.' '.$key]['input']            = $service->description;
-                        $results['items'][$site->id.' '.$key]['input_id']         = $service->id;
-                        $results['items'][$site->id.' '.$key]['input_price']      = $service->price;
-                        $results['items'][$site->id.' '.$key]['measurement']      = $service->measurement;
-                        $results['items'][$site->id.' '.$key]['description']      = '';
-                    }
-                }
-            }
-            return response()->json($results);
         }
-        abort(404);
+        else if(request()->order_id)
+        {
+            $orderDetails = OrderServiceDetail::where('order_id', request()->order_id)->get();
+
+                foreach ($orderDetails as $key => $detail) {
+                    $inputMaterialDetails = InputMaterialDetails::where('input_id', $detail->input_id)->get();
+
+                    $materials = [];
+                    foreach ($inputMaterialDetails as $materialDetail) {
+                        $material = Materials::find($materialDetail->material_id);
+                        $unit = config('constants.measurement.' . $material->measurement);
+                        $materials[] = [
+                            'material_id' => $materialDetail->material_id,
+                            'description' => $material->description,
+                            'measurement' => $material->measurement,
+                            'measurementl' => $unit,
+                            'quantity' => $materialDetail->quantity,
+                        ];
+                    }
+                    $input = Input::find($detail->input_id);
+                    $results['items'][$key] = [
+                        'input_id' => $detail->input_id,
+                        'description' => $input->description,
+                        'quantity' => $detail->input_quantity,
+                        'materials' => $materials,
+                    ];
+                }
+        }
+
+        return response()->json($results);
+    }
+    abort(404);
     }
 
 }

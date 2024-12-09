@@ -4,11 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateOrderServiceRequest;
+use App\Http\Requests\Request;
 use App\Models\Branch;
 use App\Models\BudgetService;
 use App\Models\BudgetServiceDetail;
 use App\Models\ConstructionSite;
 use App\Models\Contracts;
+use App\Models\CustomerComplaints;
+use App\Models\Input;
+use App\Models\InputMaterialDetails;
+use App\Models\InputUsedDetails;
+use App\Models\InputUseds;
+use App\Models\Materials;
 use App\Models\Oficial;
 use App\Models\Oflicial;
 use App\Models\OrderOficialDetail;
@@ -19,6 +26,7 @@ use App\Models\WishService;
 use App\Models\WishServiceDetail;
 use Barryvdh\DomPDF\Facade as PDF;
 use Carbon\Carbon;
+use CreateInputMaterialDetailsTable;
 use CreateOrderOficialDetailsTable;
 use GuzzleHttp\Promise\Create;
 use Illuminate\Support\Facades\DB;
@@ -26,46 +34,35 @@ use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
 use League\CommonMark\Node\Block\Document;
 
-class OrderServiceController extends Controller
+class CustomerComplaintsController extends Controller
 {
     public function index()
     {
-        $order_services = OrderService::with('client','construction_site')->orderBy('id');
+        $customer_complaints = CustomerComplaints::with('client','construction_site')->orderBy('id');
         if(request()->s)
         {
-            $order_services = $order_services->whereHas('construction_site', function($query){
+            $customer_complaints = $customer_complaints->whereHas('construction_site', function($query){
                 $query->where('description','LIKE', '%'. request()->s . '%');
             })->OrwhereHas('client', function($query2){
                 $query2->where('razon_social','LIKE', '%'. request()->s . '%');
             });
         }
 
-        $order_services = $order_services->paginate(20);
-        return view('pages.order-service.index', compact('order_services'));
+        $customer_complaints = $customer_complaints->paginate(20);
+        return view('pages.customer-complaints.index', compact('customer_complaints'));
     }
 
     public function create()
     {
-        $lastOrder = OrderService::orderBy('id', 'desc')->first();
-        $newOrderNumber = $lastOrder ? $lastOrder->id + 1 : 1;
+        $lascompla = CustomerComplaints::orderBy('id', 'desc')->first();
+        $newCompla = $lascompla ? $lascompla->id + 1 : 1;
         $construction_sites      = ConstructionSite::pluck('description', 'id');
         $branches               = Branch::where('status', true)->pluck('name', 'id');
         $services               = Service::pluck('description', 'id');
         $oficial                = Oficial::all();
         $const = array(config('constants'));
         $posts = $const[0]['posts'];
-        return view('pages.order-service.create', compact('construction_sites' , 'branches', 'services','newOrderNumber','oficial','posts'));
-    }
-
-    public function changeStatus($id)
-    {
-        $orderService = OrderService::find($id);
-        if ($orderService && $orderService->status == 1) {
-            $orderService->status = 3;
-            $orderService->save();
-            return response()->json(['success' => true]);
-        }
-        return response()->json(['success' => false], 404);
+        return view('pages.customer-complaints.create', compact('construction_sites' , 'branches', 'services','newCompla','oficial','posts'));
     }
 
     public function store(CreateOrderServiceRequest $request)
@@ -74,54 +71,17 @@ class OrderServiceController extends Controller
         {
             DB::transaction(function() use ($request)
             {
-                $order = OrderService::create([
-                    'date_created'          =>Carbon::createFromFormat('d/m/Y', request()->date)->format('Y-m-d'),
-                    'date_ending'           => request()->date_ending,
-                    'user_id'               => auth()->user()->id,
-                    'branch_id'             => request()->branch_id,
-                    'contract_id'           =>  request()->contract_id,
+                CustomerComplaints::create([
+                    'description'           => request()->observation,
+                    'date'                  => request()->date,
+                    'order_id'              => request()->order_id,
                     'client_id'             => request()->client_id,
+                    'user_id'               => auth()->user()->id,
                     'constructionsite_id'   => request()->site_id ,
-                    'budget_id'             => request()->budget_service_id,
-                    'observation'           => request()->observation,
-                    'status'                => 1
+                    'branch_id'             => request()->branch_id,
+                    'status'                => 1,
                 ]);
-                $dataser = request()->all();
-                $detailsers = [];
-                $detaoficials = [];
-                foreach ($dataser['input_id'] as $key => $value) {
-                    $detailsers[] = [
-                        'order_id' => $order->id,
-                        'input_id' => $dataser['input_id'][$key],
-                        'service_id' => $dataser['service_id'][$key],
-                        'input_quantity' => $dataser['quantity'][$key],
-                    ];
-                }
-                foreach ($dataser['id_oficial'] as $key => $value) {
-                    $detaoficials[] = [
-                        'order_id' => $order->id,
-                        'oficial_id' => $dataser['id_oficial'][$key],
-                    ];
-                }
-                foreach ($detailsers as $detailser ) {
-                    OrderServiceDetail::create([
-                        'order_id'              => $detailser['order_id'],
-                        'input_id'              => $detailser['input_id'],
-                        'service_id'            => $detailser['service_id'],
-                        'input_quantity'        => $detailser['input_quantity'],
-                    ]);
-                }
-                foreach ($detaoficials as $detaoficial ) {
-                    OrderOficialDetail::create([
-                        'order_id'              => $detaoficial['order_id'],
-                        'oficial_id'             => $detaoficial['oficial_id'],
-                    ]);
-                }
-                $contract = Contracts::find($request->contract_id);
-            if ($contract) {
-                $contract->status = 2;
-                $contract->save();
-            }
+
             });
 
             return response()->json([
@@ -294,55 +254,93 @@ class OrderServiceController extends Controller
     {
         return str_replace(',', '.',str_replace('.', '', $value));
     }
-
-    public function ajax_order()
+    public function changeStatus($id)
     {
-    if(request()->ajax())
-    {
-        $results = [];
-        if(request()->client_id && request()->site_id)
-        {
-            $contracts = Contracts::where('client_id', request()->client_id)
-                                  ->where('constructionsite_id', request()->site_id)
-                                  ->where('status', 1)
-                                  ->get();
-
-            foreach ($contracts as $key => $contract) {
-                $results['items'][$key]['id'] = $contract->id;
-                $results['items'][$key]['term'] = $contract->term;
-                $results['items'][$key]['budget_service_id'] = $contract->budget_service_id;
-            }
+        $customer_complaint = CustomerComplaints::find($id);
+        if ($customer_complaint && $customer_complaint->status == 1) {
+            $customer_complaint->status = 2;
+            $customer_complaint->save();
+            return response()->json(['success' => true]);
         }
-        else if(request()->contract_id)
-        {
-            $contracts = Contracts::where('status', 1)->where('id', request()->contract_id)
-                                  ->first();
+        return response()->json(['success' => false], 404);
+    }
+    public function ajax_customer()
+    {
+        if (request()->ajax()) {
+            $results = [];
 
-                $results['id'] = $contracts->id;
-                $results['term'] = $contracts->term;
-                $results['budget_service_id'] = $contracts->budget_service_id;
-            $budget = BudgetServiceDetail::where('budget_service_id', $results['budget_service_id'])
-                ->get();
-                foreach ($budget as $key => $value) {
-                    $results['budget_service_detail'][$key]['id'] = $value->id;
-                    $results['budget_service_detail'][$key]['budget_service_id'] = $value->budget_service_id;
-                    $results['budget_service_detail'][$key]['service_id'] = $value->service_id;
-                    $results['budget_service_detail'][$key]['quantity'] = $value->quantity;
-                    $results['budget_service_detail'][$key]['price'] = $value->price;
-                    $results['budget_service_detail'][$key]['level'] = $value->level;
-                    $results['budget_service_detail'][$key]['total_price'] = $value->total_price;
-                    $results['budget_service_detail'][$key]['quantity_per_meter'] = $value->quantity_per_meter;
-                    $results['budget_service_detail'][$key]['input_id'] = $value->input_id;
-                    $results['budget_service_detail'][$key]['input_name'] = $value->input->description;
-                    $results['budget_service_detail'][$key]['service_description'] = $value->service->description;
+            if (request()->client_id && request()->site_id) {
+                $orders = OrderService::where('client_id', request()->client_id)
+                                      ->where('constructionsite_id', request()->site_id)
+                                      ->get();
+
+                foreach ($orders as $key => $order) {
+                    $results['items'][$key] = [
+                        'id' => $order->id,
+                        'date_created' => $order->date_created,
+                        'description' => $order->description,
+                    ];
+                }
+            } else if (request()->order_id) {
+                $order = OrderService::where('id', request()->order_id)->first();
+                $contratos = $order->contract_id;
+                $contact = Contracts::where('id', $contratos)->first();
+                $budgetes = $contact->budget_service_id;
+                $budget = BudgetService::where('id', $budgetes)->first();
+                $wishes = $budget->wish_service_id;
+                $wishDetails = WishServiceDetail::where('wish_services_id', $wishes)->get();
+                $orderSerDetails = OrderServiceDetail::where('order_id', request()->order_id)->get();
+                $orderOficialDetails = OrderOficialDetail::where('order_id', request()->order_id)->get();
+
+                $results['contract_id'] = $contact->id;
+                $results['budget_id'] = $budget->id;
+                $results['purchase_id'] = $budget->purchase_id;
+
+                $results['service_details'] = [];
+                foreach ($orderSerDetails as $key => $orderSerDetail) {
+                    $input = Input::find($orderSerDetail->input_id);
+                    $service = Service::find($orderSerDetail->service_id);
+                    $results['service_details'][$key] = [
+                        'order_id' => $orderSerDetail->order_id,
+                        'service_id' => $orderSerDetail->service_id,
+                        'service_name' => $service->description,
+                        'input_id' => $orderSerDetail->input_id,
+                        'input_name' => $input->description,
+                        'input_quantity' => $orderSerDetail->input_quantity,
+                    ];
                 }
 
+                $results['oficial_details'] = [];
+                foreach ($orderOficialDetails as $key => $orderOficialDetail) {
+                    $oficial = Oficial::find($orderOficialDetail->oficial_id);
+                    $role = config('constants.posts.' . $oficial->post);
+                    $results['oficial_details'][$key] = [
+                        'order_id' => $orderOficialDetail->order_id,
+                        'oficial_id' => $orderOficialDetail->oficial_id,
+                        'name' => $oficial->name,
+                        'document' => $oficial->document_nr,
+                        'role_id' => $oficial->post,
+                        'role' => $role,
+                    ];
+                }
+
+                $results['wish_details'] = [];
+                foreach ($wishDetails as $key => $wishDetail) {
+                    $services = Service::find($wishDetail->services_id);
+                    $results['wish_details'][$key] = [
+                        'id' => $wishDetail->id,
+                        'service_id' => $wishDetail->services_id,
+                        'service_name' => $services->description,
+                        'quantity' => $wishDetail->quantity,
+                        'level' => $wishDetail->level,
+                    ];
+                }
+
+            }
+
+            return response()->json($results);
         }
-
-
-        return response()->json($results);
-    }
-    abort(404);
+        abort(404);
     }
 
 }

@@ -121,7 +121,7 @@
     </div>
     <div class="ibox-footer">
         <input type="submit" class="btn btn-sm btn-success" value="Guardar">
-        <a href="{{ url('purchases-orders') }}" class="btn btn-sm btn-danger">Cancelar</a>
+        <a href="{{ url('budget-service') }}" class="btn btn-sm btn-danger">Cancelar</a>
     </div>
 {{ Form::close() }}
 @endsection

@@ -1,12 +1,12 @@
 @extends('layouts.AdminLTE.index')
-@section('title', 'Promociones')
+@section('title', 'Reclamos del Cliente')
 @section('content')
 <div class="row">
     <div class="col-lg-12">
         <div class="ibox float-e-margins">
             <div class="ibox-title">
                 <div class="btn-group pull-right">
-                    <a href="{{ url('promotions/create') }}" class="btn btn-primary btn-xs"><i class="fa fa-plus"></i> Agregar</a>
+                    <a href="{{ url('customer-complaints/create') }}" class="btn btn-primary btn-xs"><i class="fa fa-plus"></i> Agregar</a>
                 </div>
             </div>
             <div class="ibox-content pb-0">
@@ -22,51 +22,56 @@
                 <table class="table table-hover table-striped mb-0">
                     <thead>
                         <tr>
-                            <th>Nro° de promoción</th>
-                            <th>Fecha de inicio</th>
-                            <th>Fecha de fin</th>
+                            <th>Nro° Reclamo</th>
+                            <th>Nro° de Orden </th>
+                            <th>Fecha de creación</th>
+                            <th>Cliente</th>
+                            <th>Obra</th>
                             <th>Descripción</th>
                             <th>Estado</th>
                             <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($promotions as $promotion)
+                        @foreach($customer_complaints as $customer_complaint)
                             <tr>
-                                <td>{{ $promotion->id }}</td>
-                                <td>{{ $promotion->date_created }}</td>
-                                <td>{{ $promotion->date_ending }}</td>
-                                <td>{{ $promotion->description }}</td>
+                                <td>{{ $customer_complaint->id }}</td>
+                                <td>{{ $customer_complaint->order_id}}</td>
+                                <td>{{ $customer_complaint->date }}</td>
+                                <td>{{ $customer_complaint->client->razon_social }}</td>
+                                <td>{{ $customer_complaint->construction_site->description }}</td>
+                                <td>{{ $customer_complaint->description }}</td>
                                 <td>
-                                    <span class="label label-{{ config('constants.promotions_label.' . $promotion->status) }}">{{ config('constants.promotions.'. $promotion->status) }}</span>
+                                    <span class="label label-{{ config('constants.customer_complaints_status_label.' . $customer_complaint->status) }}">{{ config('constants.customer_complaints_status.'. $customer_complaint->status) }}</span>
                                 </td>
                                 <td class="text-center">
-                                    @if($promotion->status == 1)
-                                        <button type="button" class="btn btn-danger btn-xs change-status-button" data-id="{{ $promotion->id }}">Eliminar</button>
-                                        <a href="{{ route('promotions.edit', $promotion->id) }}" class="btn btn-warning btn-xs">Modificar</a>
+                                    @if($customer_complaint->status == 1)
+                                        <button type="button" class="btn btn-success btn-xs change-status-button" data-id="{{ $customer_complaint->id }}">Resuelto</button>
                                     @endif
                                 </td>
+                                <td class="text-center">
+                                    {{-- <a href="{{ url('wish-service/' . $wishservice->id) }}"><i class="fa fa-info-circle"></i></a> --}}
+                                    {{-- <a href="{{ url('wish-service/' . $wishservices->id . '/edit') }}"target="_blank" data-toggle="tooltip"><i class="fa fa-pencil"></i></a> --}}
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
-            {{ $promotions->appends(request()->query())->links() }}
+            {{ $customer_complaints->appends(request()->query())->links() }}
         </div>
     </div>
 </div>
 @endsection
-
 @section('layout_js')
     <script>
         $(document).ready(function() {
             // Manejar el clic en el botón de cambiar estado
             $(document).on('click', '.change-status-button', function() {
                 var id = $(this).data('id');
-                var confirmed = confirm('¿Estás seguro de que deseas cambiar el estado a eliminado?');
+                var confirmed = confirm('¿Estás seguro de que deseas marcar este reclamo como resuelto?');
                 if (confirmed) {
                     $.ajax({
-                        url: '{{ url('promotions/change-status') }}/' + id,
+                        url: '{{ url('customer-complaint/change-status') }}/' + id,
                         method: 'GET',
                         success: function(response) {
                             if (response.success) {

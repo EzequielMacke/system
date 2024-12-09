@@ -22,11 +22,11 @@
                     <div class="row">
                         <div class="form-group col-md-6">
                             <label>Fecha de Inicio</label>
-                            <input type="date" name="date_created" class="form-control" required>
+                            <input type="date" name="start_date" class="form-control" required>
                         </div>
                         <div class="form-group col-md-6">
                             <label>Fecha de Fin</label>
-                            <input type="date" name="date_ending" class="form-control" required>
+                            <input type="date" name="end_date" class="form-control" required>
                         </div>
                     </div>
                     <div class="row">

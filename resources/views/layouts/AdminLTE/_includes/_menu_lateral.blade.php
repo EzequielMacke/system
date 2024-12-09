@@ -131,7 +131,7 @@
 				<a href="#"><i class="fa fa-group"></i><span>Servicio</span><span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span></a>
 				<ul class="treeview-menu">
                     <li class="provider">
-						<a href="{{ route('wish_service') }}" title="Pedido de Compras">
+						<a href="{{ route('promotions.index') }}" title="Promociones">
 							<span>Promociones</span>
 						</a>
 					</li>
@@ -155,17 +155,17 @@
 							<span>Orden de Servicio</span>
 						</a>
 					</li>
-					{{-- <li class="provider">
-						<a href="{{ route('production-control-quality') }}" title="Presupuesto">
+					<li class="provider">
+						<a href="{{ route('input_used') }}" title="Insumos Utilizados">
 							<span>Insumos utilizados</span>
 						</a>
 					</li>
 					<li class="provider">
-						<a href="{{ route('losses') }}" title="Presupuesto">
+						<a href="{{ route('customer_complaints') }}" title="Reclamos del cliente">
 							<span>Reclamos del Cliente</span>
 						</a>
 					</li>
-					<li class="provider">
+					{{-- <li class="provider">
 						<a href="{{ route('production-cost') }}" title="Costo Produccion">
 							<span>Informes</span>
 						</a>

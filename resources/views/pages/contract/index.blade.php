@@ -51,6 +51,12 @@
                                     <span class="label label-{{ config('constants.contract_status_label.' . $contract->status) }}">{{ config('constants.contract_status.'. $contract->status) }}</span>
                                 </td>
                                 <td class="text-center">
+                                    @if($contract->status == 1)
+                                        <button type="button" class="btn btn-danger btn-xs change-status-button" data-id="{{ $contract->id }}">Eliminar</button>
+                                        <a href="#" class="btn btn-warning btn-xs">Modificar</a>
+                                    @endif
+                                </td>
+                                <td class="text-center">
                                     {{-- <a href="{{ url('wish-service/' . $wishservice->id) }}"><i class="fa fa-info-circle"></i></a> --}}
                                     {{-- <a href="{{ url('wish-service/' . $wishservices->id . '/edit') }}"target="_blank" data-toggle="tooltip"><i class="fa fa-pencil"></i></a> --}}
                 </div>
@@ -63,4 +69,32 @@
         </div>
     </div>
 </div>
+@endsection
+@section('layout_js')
+    <script>
+        $(document).ready(function() {
+            // Manejar el clic en el botón de cambiar estado
+            $(document).on('click', '.change-status-button', function() {
+                var id = $(this).data('id');
+                var confirmed = confirm('¿Estás seguro de que deseas cambiar el estado a eliminado?');
+                if (confirmed) {
+                    $.ajax({
+                        url: '{{ url('contract/change-status') }}/' + id,
+                        method: 'GET',
+                        success: function(response) {
+                            if (response.success) {
+                                location.reload();
+                            } else {
+                                alert('Error al cambiar el estado.');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(error);
+                            alert('Error al cambiar el estado.');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 @endsection
